@@ -5,6 +5,7 @@ use ggez::{
 
 use crate::vector::Vector;
 
+/// Draw a rectangle, given its top-left corner and its width and height.
 pub fn draw_rectangle(ctx: &mut Context, position: Vector, size: Vector, colour: Color) {
     let mesh = MeshBuilder::new()
         .rectangle(
@@ -19,6 +20,7 @@ pub fn draw_rectangle(ctx: &mut Context, position: Vector, size: Vector, colour:
     graphics::draw(ctx, &mesh, (position, colour)).unwrap();
 }
 
+/// Draw a circle, given its centre position and its radius.
 pub fn draw_circle(ctx: &mut Context, position: Vector, radius: f32, colour: Color) {
     let mesh = MeshBuilder::new()
         .circle(DrawMode::fill(), [0.0, 0.0], radius, 0.2, Color::WHITE)
@@ -29,6 +31,9 @@ pub fn draw_circle(ctx: &mut Context, position: Vector, radius: f32, colour: Col
     graphics::draw(ctx, &mesh, (position, colour)).unwrap();
 }
 
+/// Draw text, given its top-left corner's position, the font size and the bounds.
+/// The default size is 16px
+/// The default bounds are infinity (no bounds).
 pub fn draw_text(
     ctx: &mut Context,
     text: &str,
