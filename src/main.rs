@@ -1,9 +1,12 @@
-//! Basic hello world example, drawing
-//! to a canvas.
+mod renderer;
+mod vector;
 
 use ggez::event;
-use ggez::graphics::{self, Color, DrawMode, MeshBuilder, Rect};
+use ggez::graphics::{self, Color};
+use ggez::input::mouse;
 use ggez::{Context, GameResult};
+use renderer::{draw_circle, draw_rectangle};
+use vector::*;
 
 struct MainState {
     canvas: graphics::Canvas,
@@ -29,17 +32,13 @@ impl event::EventHandler<ggez::GameError> for MainState {
         graphics::set_canvas(ctx, Some(&self.canvas));
         graphics::clear(ctx, graphics::Color::from((255, 255, 255, 255)));
 
-        let mesh = MeshBuilder::new()
-            .rectangle(
-                DrawMode::fill(),
-                Rect::new(0.0, 0.0, 20.0, 50.0),
-                Color::WHITE,
-            )
-            .unwrap()
-            .build(ctx)
-            .unwrap();
-        graphics::draw(ctx, &mesh, ([50.0, 0.0], Color::RED)).unwrap();
-
+        draw_rectangle(
+            ctx,
+            mouse::position(ctx).into(),
+            vec2d!(40.0, 50.0),
+            Color::RED,
+        );
+        draw_circle(ctx, mouse::position(ctx).into(), 40.0, Color::BLACK);
         graphics::set_canvas(ctx, None);
 
         graphics::draw(
@@ -51,6 +50,10 @@ impl event::EventHandler<ggez::GameError> for MainState {
         graphics::present(ctx)?;
 
         Ok(())
+    }
+
+    fn mouse_motion_event(&mut self, _ctx: &mut Context, x: f32, y: f32, _dx: f32, _dy: f32) {
+        self.mouse = [x, y];
     }
 }
 
