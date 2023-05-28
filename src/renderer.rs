@@ -1,5 +1,5 @@
 use ggez::{
-    graphics::{self, Color, DrawMode, MeshBuilder, Rect},
+    graphics::{self, Color, DrawMode, DrawParam, MeshBuilder, Rect, Text, TextFragment},
     Context,
 };
 
@@ -27,4 +27,28 @@ pub fn draw_circle(ctx: &mut Context, position: Vector, radius: f32, colour: Col
         .unwrap();
     let position: [f32; 2] = position.into();
     graphics::draw(ctx, &mesh, (position, colour)).unwrap();
+}
+
+pub fn draw_text(
+    ctx: &mut Context,
+    text: &str,
+    position: Vector,
+    size: Option<f32>,
+    bounds: Option<Vector>,
+    colour: Color,
+) {
+    let size = match size {
+        Some(x) => x,
+        None => 16.0,
+    };
+    let mut text = Text::new(TextFragment::new(text).scale(size));
+    match bounds {
+        Some(x) => {
+            let bounds: [f32; 2] = x.into();
+            text.set_bounds(bounds, graphics::Align::Left);
+        }
+        None => (),
+    }
+    let position: [f32; 2] = position.into();
+    graphics::draw(ctx, &text, DrawParam::from((position, colour))).unwrap();
 }

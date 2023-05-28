@@ -5,19 +5,17 @@ use ggez::event;
 use ggez::graphics::{self, Color};
 use ggez::input::mouse;
 use ggez::{Context, GameResult};
-use renderer::{draw_circle, draw_rectangle};
+use renderer::{draw_circle, draw_rectangle, draw_text};
 use vector::*;
 
 struct MainState {
     canvas: graphics::Canvas,
-    mouse: [f32; 2],
 }
 
 impl MainState {
     fn new(ctx: &mut Context) -> GameResult<MainState> {
         let s = MainState {
             canvas: graphics::Canvas::with_window_size(ctx).unwrap(),
-            mouse: [0.0; 2],
         };
         Ok(s)
     }
@@ -32,6 +30,14 @@ impl event::EventHandler<ggez::GameError> for MainState {
         graphics::set_canvas(ctx, Some(&self.canvas));
         graphics::clear(ctx, graphics::Color::from((255, 255, 255, 255)));
 
+        draw_text(
+            ctx,
+            "Hi there!",
+            vec2d!(0.0, 0.0),
+            None,
+            None,
+            Color::MAGENTA,
+        );
         draw_rectangle(
             ctx,
             mouse::position(ctx).into(),
@@ -50,10 +56,6 @@ impl event::EventHandler<ggez::GameError> for MainState {
         graphics::present(ctx)?;
 
         Ok(())
-    }
-
-    fn mouse_motion_event(&mut self, _ctx: &mut Context, x: f32, y: f32, _dx: f32, _dy: f32) {
-        self.mouse = [x, y];
     }
 }
 
