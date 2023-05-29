@@ -74,7 +74,19 @@ impl<'a> Button<'a> {
     }
 
     pub fn draw(&self, ctx: &mut Context) {
-        draw_rectangle(ctx, self.position, self.size, Color::BLUE);
+        println!(
+            "Button(x={}, y={}, width={}, height={})",
+            self.x(),
+            self.y(),
+            self.width(),
+            self.height()
+        );
+        draw_rectangle(
+            ctx,
+            vec2d!(self.x(), self.y()),
+            vec2d!(self.width(), self.height()),
+            Color::BLUE,
+        );
     }
 }
 
@@ -106,7 +118,6 @@ impl<'a> Menu<'a> {
     /// TODO: find a better way
     pub fn add_elements(&mut self, elements: Vec<UIElement<'a>>) {
         self.elements = [self.elements.clone(), elements].concat();
-        println!("{}", self.elements.len());
     }
 
     pub fn position(&self) -> Vector {
