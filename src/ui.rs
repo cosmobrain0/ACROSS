@@ -1,16 +1,15 @@
-use std::cell::RefCell;
+use std::{cell::RefCell, rc::Rc};
 
 use ggez::{graphics::Color, Context};
 
-use crate::{renderer::draw_rectangle, vec2d, vector::Vector};
+use crate::{renderer::draw_rectangle, vec2d, vector::Vector, MainState};
 
-#[derive(Debug, Clone)]
-pub enum UIElement<'a> {
-    Button(Button<'a>),
-    Menu(Menu<'a>),
+pub enum UIElement<'a, T> {
+    Button(Button<'a, T>),
+    Menu(Menu<'a, T>),
 }
 
-impl UIElement<'_> {
+impl<T> UIElement<'_, T> {
     pub fn position(&self) -> Vector {
         match self {
             UIElement::Button(x) => vec2d!(x.x(), x.y()),
@@ -31,16 +30,23 @@ impl UIElement<'_> {
             UIElement::Menu(x) => x.draw(ctx),
         }
     }
+
+    pub fn input_at(&self, position: Vector, state: &mut T) {
+        match self {
+            UIElement::Button(x) => x.input_at(position, state),
+            UIElement::Menu(x) => x.input_at(position, state),
+        }
+    }
 }
 
-#[derive(Debug, Clone)]
-pub struct Button<'a> {
-    parent: RefCell<Menu<'a>>,
+pub struct Button<'a, T> {
+    parent: Rc<RefCell<Menu<'a, T>>>,
     position: Vector,
     size: Vector,
+    callback: fn(&mut T),
 }
 
-impl<'a> Button<'a> {
+impl<'a, T> Button<'a, T> {
     #[inline]
     pub fn x(&self) -> f32 {
         self.position.x * self.parent.borrow().scale() + self.parent.borrow().position().x
@@ -58,11 +64,20 @@ impl<'a> Button<'a> {
         self.size.y * self.parent.borrow().scale()
     }
 
-    pub fn new(position: Vector, size: Vector, parent: RefCell<Menu<'a>>) -> Self {
+    pub fn new(
+        position: Vector,
+        size: Vector,
+        parent: Rc<RefCell<Menu<'a, T>>>,
+        callback: fn(&mut T),
+    ) -> Self
+    where
+        T: Sized,
+    {
         Self {
             position,
             size,
             parent,
+            callback,
         }
     }
 
@@ -73,6 +88,11 @@ impl<'a> Button<'a> {
             && self.x() + self.height() >= mouse.y
     }
 
+    pub fn click(&self, state: &mut T) {
+        let mut callback = self.callback;
+        callback(state);
+    }
+
     pub fn draw(&self, ctx: &mut Context) {
         draw_rectangle(
             ctx,
@@ -81,24 +101,33 @@ impl<'a> Button<'a> {
             Color::BLUE,
         );
     }
+
+    pub fn input_at(&self, position: Vector, state: &mut T) {
+        if self.x() <= position.x
+            && self.y() <= position.y
+            && self.x() + self.width() >= position.x
+            && self.y() + self.height() >= position.y
+        {
+            self.click(state);
+        }
+    }
 }
 
-impl<'a> Into<UIElement<'a>> for Button<'a> {
-    fn into(self) -> UIElement<'a> {
+impl<'a, T> Into<UIElement<'a, T>> for Button<'a, T> {
+    fn into(self) -> UIElement<'a, T> {
         UIElement::Button(self)
     }
 }
 
-#[derive(Debug, Clone)]
-pub struct Menu<'a> {
+pub struct Menu<'a, T> {
     position: Vector,
     scale: f32,
-    elements: Vec<UIElement<'a>>,
-    parent: Option<&'a Menu<'a>>,
+    elements: Vec<UIElement<'a, T>>,
+    parent: Option<&'a Menu<'a, T>>,
 }
 
-impl<'a> Menu<'a> {
-    pub fn new(position: Vector, scale: f32, parent: Option<&'a Menu<'a>>) -> Self {
+impl<'a, T> Menu<'a, T> {
+    pub fn new(position: Vector, scale: f32, parent: Option<&'a Menu<'a, T>>) -> Self {
         Self {
             position,
             scale,
@@ -109,8 +138,11 @@ impl<'a> Menu<'a> {
 
     /// There *must* be a better way
     /// TODO: find a better way
-    pub fn add_elements(&mut self, elements: Vec<UIElement<'a>>) {
-        self.elements = [self.elements.clone(), elements].concat();
+    pub fn add_elements(&mut self, elements: Vec<UIElement<'a, T>>) {
+        self.elements.reserve(elements.len());
+        for element in elements {
+            self.elements.push(element);
+        }
     }
 
     pub fn position(&self) -> Vector {
@@ -153,15 +185,28 @@ impl<'a> Menu<'a> {
         );
         self.elements.iter().for_each(|x| x.draw(ctx));
     }
+
+    pub fn input_at(&self, position: Vector, state: &mut T) {
+        let bounds = self.bounds();
+        if bounds.0.x <= position.x
+            && bounds.0.y <= position.y
+            && bounds.1.x >= position.x
+            && bounds.1.y >= position.y
+        {
+            for element in &self.elements {
+                element.input_at(position, state);
+            }
+        }
+    }
 }
 
-impl<'a> Into<UIElement<'a>> for Menu<'a> {
-    fn into(self) -> UIElement<'a> {
+impl<'a, T> Into<UIElement<'a, T>> for Menu<'a, T> {
+    fn into(self) -> UIElement<'a, T> {
         UIElement::Menu(self)
     }
 }
 
-impl Default for Menu<'_> {
+impl<T> Default for Menu<'_, T> {
     fn default() -> Self {
         Self {
             position: vec2d!(0.0, 0.0),

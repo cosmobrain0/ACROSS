@@ -3,26 +3,45 @@ mod ui;
 mod vector;
 
 use std::cell::RefCell;
+use std::rc::Rc;
 
 use ggez::event;
-use ggez::graphics::{self, get_window_color_format, window, Color, Rect};
+use ggez::graphics::{self, get_window_color_format, Color, Rect};
 use ggez::input::mouse;
 use ggez::{Context, GameResult};
-use renderer::{draw_circle, draw_rectangle, draw_text};
+
 use ui::{Button, Menu};
 use vector::*;
 
-struct MainState {
+pub struct GameState {}
+
+impl GameState {
+    pub fn new() -> Self {
+        Self {}
+    }
+}
+
+pub struct MainState {
     canvas: graphics::Canvas,
-    menu: RefCell<Menu<'static>>,
+    menu: Rc<RefCell<Menu<'static, GameState>>>,
+    state: GameState,
 }
 
 impl MainState {
     fn new(ctx: &mut Context) -> GameResult<MainState> {
-        let menu = RefCell::new(Menu::new(vec2d!(0.0, 0.0), 1.0, None));
+        let menu = Rc::new(RefCell::new(Menu::new(vec2d!(0.0, 0.0), 1.0, None)));
         let buttons = vec![
-            Button::new(vec2d!(0.0, 0.0), vec2d!(75.0, 20.0), menu.clone()).into(),
-            Button::new(vec2d!(75.0, 75.0), vec2d!(100.0, 60.0), menu.clone()).into(),
+            Button::new(vec2d!(0.0, 0.0), vec2d!(75.0, 20.0), menu.clone(), |_| {
+                println!("Hi")
+            })
+            .into(),
+            Button::new(
+                vec2d!(75.0, 75.0),
+                vec2d!(100.0, 60.0),
+                menu.clone(),
+                |_| println!("Hello"),
+            )
+            .into(),
         ];
         menu.borrow_mut().add_elements(buttons);
         let s = MainState {
@@ -35,6 +54,7 @@ impl MainState {
             )
             .unwrap(),
             menu,
+            state: GameState::new(),
         };
         Ok(s)
     }
@@ -65,6 +85,20 @@ impl event::EventHandler<ggez::GameError> for MainState {
         graphics::present(ctx)?;
 
         Ok(())
+    }
+
+    fn key_up_event(
+        &mut self,
+        _ctx: &mut Context,
+        _keycode: event::KeyCode,
+        _keymods: event::KeyMods,
+    ) {
+        let mouse_position = mouse::position(_ctx);
+        let mouse_position = vec2d![mouse_position.x, mouse_position.y];
+        match _keycode {
+            event::KeyCode::Space => self.menu.borrow().input_at(mouse_position, &mut self.state),
+            _ => (),
+        }
     }
 }
 
