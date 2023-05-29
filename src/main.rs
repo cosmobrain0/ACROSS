@@ -52,7 +52,7 @@ impl event::EventHandler<ggez::GameError> for MainState {
             &self.canvas,
             graphics::DrawParam::new()
                 .color(Color::from((255, 255, 255, 255)))
-                .scale([window_width / 1920.0, window_height / 1080.0]),
+                .scale([1920.0 / window_width, 1080.0 / window_height]),
         )?;
 
         graphics::present(ctx)?;
