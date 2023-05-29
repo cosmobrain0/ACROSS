@@ -5,7 +5,7 @@ mod vector;
 use std::cell::RefCell;
 
 use ggez::event;
-use ggez::graphics::{self, Color, Rect};
+use ggez::graphics::{self, window, Color, Rect};
 use ggez::input::mouse;
 use ggez::{Context, GameResult};
 use renderer::{draw_circle, draw_rectangle, draw_text};
@@ -40,16 +40,19 @@ impl event::EventHandler<ggez::GameError> for MainState {
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
         graphics::set_canvas(ctx, Some(&self.canvas));
-        graphics::clear(ctx, graphics::Color::from((0, 255, 255, 255)));
+        graphics::clear(ctx, graphics::Color::from((255, 255, 255, 255)));
         graphics::set_screen_coordinates(ctx, Rect::new(0.0, 0.0, 1920.0, 1080.0)).unwrap();
 
         self.menu.borrow().draw(ctx);
 
         graphics::set_canvas(ctx, None);
+        let (window_width, window_height) = graphics::size(ctx);
         graphics::draw(
             ctx,
             &self.canvas,
-            graphics::DrawParam::new().color(Color::from((255, 255, 255, 255))),
+            graphics::DrawParam::new()
+                .color(Color::from((255, 255, 255, 255)))
+                .scale([window_width / 1920.0, window_height / 1080.0]),
         )?;
 
         graphics::present(ctx)?;
