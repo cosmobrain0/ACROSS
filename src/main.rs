@@ -5,7 +5,7 @@ mod vector;
 use std::cell::RefCell;
 
 use ggez::event;
-use ggez::graphics::{self, window, Color, Rect};
+use ggez::graphics::{self, get_window_color_format, window, Color, Rect};
 use ggez::input::mouse;
 use ggez::{Context, GameResult};
 use renderer::{draw_circle, draw_rectangle, draw_text};
@@ -26,7 +26,14 @@ impl MainState {
         ];
         menu.borrow_mut().add_elements(buttons);
         let s = MainState {
-            canvas: graphics::Canvas::with_window_size(ctx).unwrap(),
+            canvas: graphics::Canvas::new(
+                ctx,
+                1920,
+                1080,
+                ggez::conf::NumSamples::One,
+                get_window_color_format(ctx),
+            )
+            .unwrap(),
             menu,
         };
         Ok(s)
