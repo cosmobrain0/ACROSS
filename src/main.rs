@@ -7,16 +7,19 @@ use ggez::graphics::{self, Color};
 use ggez::input::mouse;
 use ggez::{Context, GameResult};
 use renderer::{draw_circle, draw_rectangle, draw_text};
+use ui::Menu;
 use vector::*;
 
 struct MainState {
     canvas: graphics::Canvas,
+    menu: Menu<'static>,
 }
 
 impl MainState {
     fn new(ctx: &mut Context) -> GameResult<MainState> {
         let s = MainState {
             canvas: graphics::Canvas::with_window_size(ctx).unwrap(),
+            menu: Menu::default(),
         };
         Ok(s)
     }

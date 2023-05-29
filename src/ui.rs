@@ -8,8 +8,31 @@ enum UIElement<'a> {
     Menu(Menu<'a>),
 }
 
+impl UIElement<'_> {
+    pub fn position(&self) -> Vector {
+        match self {
+            UIElement::Button(x) => vec2d!(x.x(), x.y()),
+            UIElement::Menu(x) => x.position(),
+        }
+    }
+
+    pub fn size(&self) -> Vector {
+        match self {
+            UIElement::Button(x) => vec2d!(x.width(), x.height()),
+            UIElement::Menu(x) => x.size(),
+        }
+    }
+
+    pub fn draw(&self, ctx: &mut Context) {
+        match self {
+            UIElement::Button(x) => x.draw(ctx),
+            UIElement::Menu(x) => x.draw(ctx),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
-struct Button<'a> {
+pub struct Button<'a> {
     parent: Menu<'a>,
     position: Vector,
     size: Vector,
@@ -54,7 +77,7 @@ impl<'a> Button<'a> {
 }
 
 #[derive(Debug, Clone)]
-struct Menu<'a> {
+pub struct Menu<'a> {
     position: Vector,
     scale: f32,
     elements: Vec<UIElement<'a>>,
@@ -89,6 +112,33 @@ impl<'a> Menu<'a> {
             Some(parent) => self.scale * parent.scale(),
             None => self.scale,
         }
+    }
+
+    /// Returns (top_left, bottom_right)
+    pub fn bounds(&self) -> (Vector, Vector) {
+        let initial: Vector = self.elements[0].position();
+        let initial: (Vector, Vector) = (initial, initial);
+        self.elements.iter().fold(initial, |bounds, element| {
+            let position = element.position();
+            let size = element.size();
+            (bounds.0.min(position), bounds.1.max(position + size))
+        })
+    }
+
+    pub fn size(&self) -> Vector {
+        let bounds = self.bounds();
+        bounds.1 - bounds.0
+    }
+
+    pub fn draw(&self, ctx: &mut Context) {
+        let bounds = self.bounds();
+        draw_rectangle(
+            ctx,
+            bounds.0,
+            bounds.1 - bounds.0,
+            Color::new(1.0, 1.0, 1.0, 0.3),
+        );
+        self.elements.iter().for_each(|x| x.draw(ctx));
     }
 }
 

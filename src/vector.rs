@@ -87,6 +87,14 @@ impl Vector {
             diff
         }
     }
+
+    pub fn min(&self, other: Vector) -> Vector {
+        vec2d!(self.x.min(other.x), self.y.min(other.y))
+    }
+
+    pub fn max(&self, other: Vector) -> Vector {
+        vec2d!(self.x.max(other.x), self.y.max(other.y))
+    }
 }
 
 impl Add for Vector {
