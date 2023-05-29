@@ -1,4 +1,5 @@
 mod renderer;
+mod ui;
 mod vector;
 
 use ggez::event;
