@@ -45,6 +45,7 @@ impl event::EventHandler<ggez::GameError> for MainState {
 
         self.menu.borrow().draw(ctx);
 
+        graphics::set_canvas(ctx, None);
         graphics::draw(
             ctx,
             &self.canvas,

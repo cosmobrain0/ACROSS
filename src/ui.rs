@@ -74,13 +74,6 @@ impl<'a> Button<'a> {
     }
 
     pub fn draw(&self, ctx: &mut Context) {
-        println!(
-            "Button(x={}, y={}, width={}, height={})",
-            self.x(),
-            self.y(),
-            self.width(),
-            self.height()
-        );
         draw_rectangle(
             ctx,
             vec2d!(self.x(), self.y()),
