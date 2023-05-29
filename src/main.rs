@@ -40,7 +40,7 @@ impl event::EventHandler<ggez::GameError> for MainState {
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
         graphics::set_canvas(ctx, Some(&self.canvas));
-        graphics::clear(ctx, graphics::Color::from((255, 255, 255, 255)));
+        graphics::clear(ctx, graphics::Color::from((0, 255, 255, 255)));
         graphics::set_screen_coordinates(ctx, Rect::new(0.0, 0.0, 1920.0, 1080.0)).unwrap();
 
         self.menu.borrow().draw(ctx);
