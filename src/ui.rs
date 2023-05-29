@@ -1,9 +1,11 @@
+use std::cell::RefCell;
+
 use ggez::{graphics::Color, Context};
 
 use crate::{renderer::draw_rectangle, vec2d, vector::Vector};
 
 #[derive(Debug, Clone)]
-enum UIElement<'a> {
+pub enum UIElement<'a> {
     Button(Button<'a>),
     Menu(Menu<'a>),
 }
@@ -33,7 +35,7 @@ impl UIElement<'_> {
 
 #[derive(Debug, Clone)]
 pub struct Button<'a> {
-    parent: Menu<'a>,
+    parent: RefCell<Menu<'a>>,
     position: Vector,
     size: Vector,
 }
@@ -41,22 +43,22 @@ pub struct Button<'a> {
 impl<'a> Button<'a> {
     #[inline]
     pub fn x(&self) -> f32 {
-        self.position.x * self.parent.scale() + self.parent.position().x
+        self.position.x * self.parent.borrow().scale() + self.parent.borrow().position().x
     }
     #[inline]
     pub fn y(&self) -> f32 {
-        self.position.y * self.parent.scale() + self.parent.position().y
+        self.position.y * self.parent.borrow().scale() + self.parent.borrow().position().y
     }
     #[inline]
     pub fn width(&self) -> f32 {
-        self.size.x * self.parent.scale()
+        self.size.x * self.parent.borrow().scale()
     }
     #[inline]
     pub fn height(&self) -> f32 {
-        self.size.y * self.parent.scale()
+        self.size.y * self.parent.borrow().scale()
     }
 
-    pub fn new(position: Vector, size: Vector, parent: Menu<'a>) -> Self {
+    pub fn new(position: Vector, size: Vector, parent: RefCell<Menu<'a>>) -> Self {
         Self {
             position,
             size,
@@ -73,6 +75,12 @@ impl<'a> Button<'a> {
 
     pub fn draw(&self, ctx: &mut Context) {
         draw_rectangle(ctx, self.position, self.size, Color::BLUE);
+    }
+}
+
+impl<'a> Into<UIElement<'a>> for Button<'a> {
+    fn into(self) -> UIElement<'a> {
+        UIElement::Button(self)
     }
 }
 
@@ -139,6 +147,12 @@ impl<'a> Menu<'a> {
             Color::new(1.0, 1.0, 1.0, 0.3),
         );
         self.elements.iter().for_each(|x| x.draw(ctx));
+    }
+}
+
+impl<'a> Into<UIElement<'a>> for Menu<'a> {
+    fn into(self) -> UIElement<'a> {
+        UIElement::Menu(self)
     }
 }
 

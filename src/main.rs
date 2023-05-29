@@ -2,24 +2,31 @@ mod renderer;
 mod ui;
 mod vector;
 
+use std::cell::RefCell;
+
 use ggez::event;
 use ggez::graphics::{self, Color};
 use ggez::input::mouse;
 use ggez::{Context, GameResult};
 use renderer::{draw_circle, draw_rectangle, draw_text};
-use ui::Menu;
+use ui::{Button, Menu};
 use vector::*;
 
 struct MainState {
     canvas: graphics::Canvas,
-    menu: Menu<'static>,
+    menu: RefCell<Menu<'static>>,
 }
 
 impl MainState {
     fn new(ctx: &mut Context) -> GameResult<MainState> {
+        let mut menu = RefCell::new(Menu::new(vec2d!(0.0, 0.0), 1.0, None));
+        menu.borrow_mut().add_elements(vec![
+            Button::new(vec2d!(0.0, 0.0), vec2d!(75.0, 20.0), menu.clone()).into(),
+            Button::new(vec2d!(75.0, 75.0), vec2d!(100.0, 60.0), menu.clone()).into(),
+        ]);
         let s = MainState {
             canvas: graphics::Canvas::with_window_size(ctx).unwrap(),
-            menu: Menu::default(),
+            menu,
         };
         Ok(s)
     }
@@ -34,22 +41,7 @@ impl event::EventHandler<ggez::GameError> for MainState {
         graphics::set_canvas(ctx, Some(&self.canvas));
         graphics::clear(ctx, graphics::Color::from((255, 255, 255, 255)));
 
-        draw_text(
-            ctx,
-            "Hi there!",
-            vec2d!(0.0, 0.0),
-            None,
-            None,
-            Color::MAGENTA,
-        );
-        draw_rectangle(
-            ctx,
-            mouse::position(ctx).into(),
-            vec2d!(40.0, 50.0),
-            Color::RED,
-        );
-        draw_circle(ctx, mouse::position(ctx).into(), 40.0, Color::BLACK);
-        graphics::set_canvas(ctx, None);
+        self.menu.borrow().draw(ctx);
 
         graphics::draw(
             ctx,
