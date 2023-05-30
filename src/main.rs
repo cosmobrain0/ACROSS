@@ -87,16 +87,18 @@ impl event::EventHandler<ggez::GameError> for MainState {
         Ok(())
     }
 
-    fn key_up_event(
+    fn mouse_button_up_event(
         &mut self,
         _ctx: &mut Context,
-        _keycode: event::KeyCode,
-        _keymods: event::KeyMods,
+        button: event::MouseButton,
+        x: f32,
+        y: f32,
     ) {
-        let mouse_position = mouse::position(_ctx);
-        let mouse_position = vec2d![mouse_position.x, mouse_position.y];
-        match _keycode {
-            event::KeyCode::Space => self.menu.borrow().input_at(mouse_position, &mut self.state),
+        let mouse_position = vec2d!(x, y);
+        match button {
+            event::MouseButton::Left => {
+                self.menu.borrow().input_at(mouse_position, &mut self.state)
+            }
             _ => (),
         }
     }
