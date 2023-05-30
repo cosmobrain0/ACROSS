@@ -198,6 +198,14 @@ impl<'a, T> Menu<'a, T> {
             }
         }
     }
+
+    pub fn set_position(&mut self, position: Vector) {
+        self.position = position;
+    }
+
+    pub fn set_scale(&mut self, scale: f32) {
+        self.scale = scale;
+    }
 }
 
 impl<'a, T> Into<UIElement<'a, T>> for Menu<'a, T> {
