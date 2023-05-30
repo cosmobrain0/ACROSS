@@ -89,7 +89,7 @@ impl<'a, T> Button<'a, T> {
     }
 
     pub fn click(&self, state: &mut T) {
-        let mut callback = self.callback;
+        let callback = self.callback;
         callback(state);
     }
 
@@ -103,11 +103,7 @@ impl<'a, T> Button<'a, T> {
     }
 
     pub fn input_at(&self, position: Vector, state: &mut T) {
-        if self.x() <= position.x
-            && self.y() <= position.y
-            && self.x() + self.width() >= position.x
-            && self.y() + self.height() >= position.y
-        {
+        if self.is_hovered(position) {
             self.click(state);
         }
     }

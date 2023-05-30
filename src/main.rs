@@ -63,6 +63,7 @@ impl MainState {
 impl event::EventHandler<ggez::GameError> for MainState {
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
         self.menu.borrow_mut().set_position(vec2d!(20.0, 50.0));
+        self.menu.borrow_mut().set_scale(0.5);
         Ok(())
     }
 
