@@ -10,8 +10,7 @@ use ggez::graphics::{self, get_window_color_format, Color, Rect};
 use ggez::input::mouse;
 use ggez::{Context, GameResult};
 
-use renderer::draw_rectangle;
-use ui::{Button, Menu, UIElement};
+use ui::{Button, Menu};
 use vector::*;
 
 pub const SCREEN_WIDTH: usize = 1920;
@@ -43,6 +42,7 @@ pub fn mouse_position(ctx: &mut Context) -> Vector {
 impl MainState {
     fn new(ctx: &mut Context) -> GameResult<MainState> {
         let menu = Rc::new(RefCell::new(Menu::new(vec2d!(0.0, 0.0), 1.0, None)));
+        menu.borrow_mut().set_position(vec2d!(20.0, 50.0));
         let buttons = vec![
             Button::new(
                 vec2d!(0.0, 0.0),
@@ -62,6 +62,9 @@ impl MainState {
             .into(),
         ];
         menu.borrow_mut().add_elements(buttons);
+        let position = menu.borrow().elements[0].position();
+        println!("ElementOne(x={x}, y={y})", x = position.x, y = position.y);
+
         let s = MainState {
             canvas: graphics::Canvas::new(
                 ctx,
