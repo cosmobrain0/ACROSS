@@ -10,7 +10,7 @@ macro_rules! vec2d {
 }
 
 /// Represents a point in 2D space, using 2 f32's for the x and y
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Default, Copy)]
 pub struct Vector {
     pub x: f32,
     pub y: f32,
@@ -86,6 +86,14 @@ impl Vector {
         } else {
             diff
         }
+    }
+
+    pub fn min(&self, other: Vector) -> Vector {
+        vec2d!(self.x.min(other.x), self.y.min(other.y))
+    }
+
+    pub fn max(&self, other: Vector) -> Vector {
+        vec2d!(self.x.max(other.x), self.y.max(other.y))
     }
 }
 

@@ -1,5 +1,5 @@
 use ggez::{
-    graphics::{self, Color, DrawMode, DrawParam, MeshBuilder, Rect, Text, TextFragment},
+    graphics::{self, Align, Color, DrawMode, DrawParam, MeshBuilder, Rect, Text, TextFragment},
     Context,
 };
 
@@ -32,25 +32,25 @@ pub fn draw_circle(ctx: &mut Context, position: Vector, radius: f32, colour: Col
 }
 
 /// Draw text, given its top-left corner's position, the font size and the bounds.
-/// The default size is 16px
+/// The default size is 32px
 /// The default bounds are infinity (no bounds).
 pub fn draw_text(
     ctx: &mut Context,
     text: &str,
     position: Vector,
     size: Option<f32>,
-    bounds: Option<Vector>,
+    bounds: Option<(Vector, graphics::Align)>,
     colour: Color,
 ) {
     let size = match size {
         Some(x) => x,
-        None => 16.0,
+        None => 32.0,
     };
     let mut text = Text::new(TextFragment::new(text).scale(size));
     match bounds {
-        Some(x) => {
-            let bounds: [f32; 2] = x.into();
-            text.set_bounds(bounds, graphics::Align::Left);
+        Some((b, align)) => {
+            let bounds: [f32; 2] = b.into();
+            text.set_bounds(bounds, align);
         }
         None => (),
     }
