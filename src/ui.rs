@@ -47,19 +47,15 @@ pub struct Button<'a, T> {
 }
 
 impl<'a, T> Button<'a, T> {
-    #[inline]
     pub fn x(&self) -> f32 {
         self.position.x * self.parent.borrow().scale() + self.parent.borrow().position().x
     }
-    #[inline]
     pub fn y(&self) -> f32 {
         self.position.y * self.parent.borrow().scale() + self.parent.borrow().position().y
     }
-    #[inline]
     pub fn width(&self) -> f32 {
         self.size.x * self.parent.borrow().scale()
     }
-    #[inline]
     pub fn height(&self) -> f32 {
         self.size.y * self.parent.borrow().scale()
     }
@@ -118,7 +114,7 @@ impl<'a, T> Into<UIElement<'a, T>> for Button<'a, T> {
 pub struct Menu<'a, T> {
     position: Vector,
     scale: f32,
-    elements: Vec<UIElement<'a, T>>,
+    pub elements: Vec<UIElement<'a, T>>,
     parent: Option<&'a Menu<'a, T>>,
 }
 
