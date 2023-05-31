@@ -43,6 +43,7 @@ impl MainState {
     fn new(ctx: &mut Context) -> GameResult<MainState> {
         let menu = Rc::new(RefCell::new(Menu::new(vec2d!(0.0, 0.0), 1.0, None)));
         menu.borrow_mut().set_position(vec2d!(90.0, 350.0));
+        menu.borrow_mut().set_scale(2.0);
         let buttons = vec![
             Button::new(
                 vec2d!(0.0, 0.0),
