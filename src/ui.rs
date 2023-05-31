@@ -1,8 +1,16 @@
 use std::{cell::RefCell, rc::Rc};
 
-use ggez::{graphics::Color, Context};
+use ggez::{
+    graphics::{self, Color},
+    Context,
+};
 
-use crate::{renderer::draw_rectangle, vec2d, vector::Vector, MainState};
+use crate::{
+    renderer::{draw_rectangle, draw_text},
+    vec2d,
+    vector::Vector,
+    MainState,
+};
 
 pub enum UIElement<'a, T> {
     Button(Button<'a, T>),
@@ -44,6 +52,7 @@ pub struct Button<'a, T> {
     position: Vector,
     size: Vector,
     callback: fn(&mut T),
+    text: String,
 }
 
 impl<'a, T> Button<'a, T> {
@@ -65,6 +74,7 @@ impl<'a, T> Button<'a, T> {
         size: Vector,
         parent: Rc<RefCell<Menu<'a, T>>>,
         callback: fn(&mut T),
+        text: &str,
     ) -> Self
     where
         T: Sized,
@@ -74,6 +84,7 @@ impl<'a, T> Button<'a, T> {
             size,
             parent,
             callback,
+            text: text.to_owned(),
         }
     }
 
@@ -95,6 +106,15 @@ impl<'a, T> Button<'a, T> {
             vec2d!(self.x(), self.y()),
             vec2d!(self.width(), self.height()),
             Color::BLUE,
+        );
+
+        draw_text(
+            ctx,
+            &self.text,
+            self.position + vec2d!(0.0, self.size.y - 32.0) / 2.0,
+            None,
+            Some((self.size, graphics::Align::Center)),
+            Color::WHITE,
         );
     }
 

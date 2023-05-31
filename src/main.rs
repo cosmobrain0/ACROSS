@@ -44,15 +44,20 @@ impl MainState {
     fn new(ctx: &mut Context) -> GameResult<MainState> {
         let menu = Rc::new(RefCell::new(Menu::new(vec2d!(0.0, 0.0), 1.0, None)));
         let buttons = vec![
-            Button::new(vec2d!(0.0, 0.0), vec2d!(75.0, 20.0), menu.clone(), |_| {
-                println!("Hi")
-            })
+            Button::new(
+                vec2d!(0.0, 0.0),
+                vec2d!(75.0, 20.0),
+                menu.clone(),
+                |_| println!("Hi"),
+                "Hi",
+            )
             .into(),
             Button::new(
                 vec2d!(75.0, 75.0),
                 vec2d!(100.0, 60.0),
                 menu.clone(),
                 |_| println!("Hello"),
+                "Hello",
             )
             .into(),
         ];
