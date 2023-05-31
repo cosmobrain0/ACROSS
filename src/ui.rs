@@ -92,7 +92,7 @@ impl<'a, T> Button<'a, T> {
         self.x() <= mouse.x
             && self.y() <= mouse.y
             && self.x() + self.width() >= mouse.x
-            && self.x() + self.height() >= mouse.y
+            && self.y() + self.height() >= mouse.y
     }
 
     pub fn click(&self, state: &mut T) {
@@ -111,10 +111,10 @@ impl<'a, T> Button<'a, T> {
         draw_text(
             ctx,
             &self.text,
-            self.position + vec2d!(0.0, self.size.y - 32.0) / 2.0,
+            vec2d!(self.x(), self.y() + (self.height() - 32.0) / 2.0),
             None,
             Some((self.size, graphics::Align::Center)),
-            Color::WHITE,
+            Color::BLACK,
         );
     }
 
@@ -193,7 +193,7 @@ impl<'a, T> Menu<'a, T> {
             ctx,
             bounds.0,
             bounds.1 - bounds.0,
-            Color::new(1.0, 1.0, 1.0, 0.3),
+            Color::new(1.0, 0.0, 0.0, 0.3),
         );
         self.elements.iter().for_each(|x| x.draw(ctx));
     }

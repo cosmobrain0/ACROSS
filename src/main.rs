@@ -42,7 +42,7 @@ pub fn mouse_position(ctx: &mut Context) -> Vector {
 impl MainState {
     fn new(ctx: &mut Context) -> GameResult<MainState> {
         let menu = Rc::new(RefCell::new(Menu::new(vec2d!(0.0, 0.0), 1.0, None)));
-        menu.borrow_mut().set_position(vec2d!(20.0, 50.0));
+        menu.borrow_mut().set_position(vec2d!(90.0, 350.0));
         let buttons = vec![
             Button::new(
                 vec2d!(0.0, 0.0),
@@ -83,7 +83,6 @@ impl MainState {
 
 impl event::EventHandler<ggez::GameError> for MainState {
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
-        self.menu.borrow_mut().set_position(vec2d!(0.0, 0.0));
         Ok(())
     }
 
