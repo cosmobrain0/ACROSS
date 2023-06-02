@@ -1,3 +1,4 @@
+mod path;
 mod renderer;
 mod ui;
 mod vector;
@@ -10,17 +11,30 @@ use ggez::graphics::{self, get_window_color_format, Color, Rect};
 use ggez::input::mouse;
 use ggez::{Context, GameResult};
 
+use path::Path;
 use ui::{Button, Menu};
 use vector::*;
 
 pub const SCREEN_WIDTH: usize = 1920;
 pub const SCREEN_HEIGHT: usize = 1080;
 
-pub struct GameState {}
+pub struct GameState {
+    path: Path,
+}
 
 impl GameState {
     pub fn new() -> Self {
-        Self {}
+        let mut path = Path::new();
+        path.add_points(vec![
+            vec2d![10.0, 10.0],
+            vec2d![500.0, 100.0],
+            vec2d![150.0, 200.0],
+            vec2d![800.0, 1000.0],
+        ])
+        .add_connections(&vec![(0, 1), (1, 3), (3, 0)])
+        .expect("Tried building a path with invalid connections!");
+
+        Self { path }
     }
 }
 
@@ -63,6 +77,7 @@ impl MainState {
         menu.borrow_mut().add_elements(buttons);
         let position = menu.borrow().elements[0].position();
         println!("ElementOne(x={x}, y={y})", x = position.x, y = position.y);
+        graphics::set_drawable_size(ctx, 1920.0 / 2.0, 1080.0 / 2.0).unwrap();
 
         let s = MainState {
             canvas: graphics::Canvas::new(
@@ -92,8 +107,9 @@ impl event::EventHandler<ggez::GameError> for MainState {
             Rect::new(0.0, 0.0, SCREEN_WIDTH as f32, SCREEN_HEIGHT as f32),
         )
         .unwrap();
-        graphics::clear(ctx, graphics::Color::from((255, 255, 255, 255)));
+        graphics::clear(ctx, graphics::Color::from((0, 0, 0, 255)));
 
+        self.state.path.draw(ctx);
         self.menu.borrow().draw(ctx);
 
         graphics::set_canvas(ctx, None);
