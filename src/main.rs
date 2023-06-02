@@ -1,4 +1,5 @@
 mod path;
+mod pathfind;
 mod renderer;
 mod ui;
 mod vector;
@@ -11,7 +12,7 @@ use ggez::graphics::{self, get_window_color_format, Color, Rect};
 use ggez::input::mouse;
 use ggez::{Context, GameResult};
 
-use path::Path;
+use path::Web;
 use ui::{Button, Menu};
 use vector::*;
 
@@ -19,12 +20,12 @@ pub const SCREEN_WIDTH: usize = 1920;
 pub const SCREEN_HEIGHT: usize = 1080;
 
 pub struct GameState {
-    path: Path,
+    path: Web,
 }
 
 impl GameState {
     pub fn new() -> Self {
-        let mut path = Path::new();
+        let mut path = Web::new();
         path.add_points(vec![
             vec2d![10.0, 10.0],
             vec2d![500.0, 100.0],
@@ -142,7 +143,7 @@ impl event::EventHandler<ggez::GameError> for MainState {
 }
 
 pub fn main() -> GameResult {
-    let cb = ggez::ContextBuilder::new("hello_canvas", "ggez");
+    let cb = ggez::ContextBuilder::new("ACROSS", "Cosmo Brain");
     let (mut ctx, event_loop) = cb.build()?;
 
     let state = MainState::new(&mut ctx)?;

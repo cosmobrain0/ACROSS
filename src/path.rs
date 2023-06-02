@@ -1,67 +1,103 @@
-use ggez::{graphics::Color, Context};
+use crate::vector::Vector;
 
-use crate::{
-    renderer::{draw_circle, draw_line},
-    vector::Vector,
-};
-
-#[derive(Debug)]
-pub struct ConnectionAddError {
-    point_count: usize,
-    start_index: usize,
-    end_index: usize,
+pub struct RouteCreationError<'a> {
+    invalid_connections: Vec<usize>,
+    points: &'a Vec<&'a Point<'a>>,
 }
 
-pub struct Path {
-    points: Vec<Vector>,
-    connections: Vec<(usize, usize)>, // (a, b) means you can go from points[a] to points[b]
+pub enum PathCreationError {
+    NoValidRoute,
+    InvalidConnections {
+        invalid_connections: Vec<(usize, usize)>,
+        point_count: usize,
+    },
 }
 
-impl Path {
-    pub fn new() -> Self {
-        Self {
-            points: Vec::new(),
-            connections: Vec::new(),
-        }
-    }
-    pub fn add_points(&mut self, points: Vec<Vector>) -> &mut Self {
-        self.points.reserve(points.len());
-        for point in points {
-            self.points.push(point);
-        }
-        self
-    }
-    pub fn add_connections(
-        &mut self,
-        connections: &Vec<(usize, usize)>,
-    ) -> Result<&mut Self, ConnectionAddError> {
-        for &connection in connections {
-            match connection {
-                (a, b) if a >= self.points.len() || b >= self.points.len() => {
-                    return Err(ConnectionAddError {
-                        point_count: self.points.len(),
-                        start_index: a,
-                        end_index: b,
-                    });
-                }
-                (a, b) => self.connections.push((a, b)),
+pub struct Route<'a> {
+    web: &'a Web<'a>,
+    points: Vec<&'a Vector>,
+}
+
+impl<'a> Route<'a> {
+    pub fn new<'b>(web: &Web, points: &'b Vec<&'a Point>) -> Result<Self, RouteCreationError<'b>>
+    where
+        'a: 'b,
+    {
+        let mut invalid_connections = vec![];
+        for (i, &point) in points.iter().enumerate().skip(1) {
+            if !point.is_neighbour(points[i - 1]) {
+                invalid_connections.push(i - 1);
             }
         }
-        Ok(self)
+        if invalid_connections.len() > 0 {
+            Err(RouteCreationError {
+                invalid_connections,
+                points,
+            })
+        } else {
+            Ok(Self {
+                web,
+                points: points.iter().map(|&x| x.position()).collect(),
+            })
+        }
+    }
+}
+
+pub struct Web<'a> {
+    points: Vec<Point<'a>>,
+    route: Route<'a>,
+}
+impl<'a> Web<'a> {
+    pub fn new(
+        points: Vec<Vector>,
+        connections: Vec<(usize, usize)>,
+    ) -> Result<Self, PathCreationError> {
+        todo!()
+    }
+}
+
+pub struct Point<'a> {
+    web: &'a Web<'a>,
+    position: Vector,
+    connections: Vec<&'a Point<'a>>,
+}
+impl<'a> Point<'a> {
+    pub fn new(web: &Web, position: Vector) -> Self {
+        Self {
+            web,
+            position,
+            connections: vec![],
+        }
+    }
+    pub fn position(&self) -> &Vector {
+        &self.position
     }
 
-    pub fn draw(&mut self, ctx: &mut Context) {
-        for connection in &self.connections {
-            draw_line(
-                ctx,
-                self.points[connection.0],
-                self.points[connection.1],
-                3.0,
-                Color::WHITE,
-            );
-        }
-        self.points
-            .iter()
-            .for_each(|&point| draw_circle(ctx, point, 20.0, Color::WHITE));
+    /// Returns the number of connections which were actually added.
+    /// Connections may be ignored if they refer to points which have already been added
+    /// And I don't like how this doesn't check if `connections` itself doesn't have any duplicates
+    /// TODO: fix that bug
+    /// And a point can't be connected to itself
+    pub fn add_connections(&mut self, connections: Vec<&'a Point>) -> usize {
+        let original_length = self.connections.len();
+        self.connections.extend(
+            connections
+                .iter()
+                .filter(|&&x| {
+                    !connections.iter().any(|&val| std::ptr::eq(val, x))
+                        && !self.connections.iter().any(|&val| std::ptr::eq(val, x))
+                })
+                .copied(),
+        );
+        self.connections.len() - original_length
+    }
+
+    pub fn is_neighbour(&self, point: &Point) -> bool {
+        self.connections.iter().any(|&x| std::ptr::eq(x, point))
+    }
+
+    /// TODO: optimise (maybe)
+    pub fn are_all_neighbours(&self, points: &Vec<&Point>) -> bool {
+        points.iter().all(|&point| self.is_neighbour(point))
     }
 }
