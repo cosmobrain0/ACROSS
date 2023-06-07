@@ -1,70 +1,122 @@
-use crate::vector::Vector;
+use std::{cell::RefCell, rc::Rc};
 
-pub struct RouteCreationError<'a> {
+use ggez::{graphics::Color, Context};
+
+use crate::{
+    renderer::{draw_circle, draw_line},
+    vector::Vector,
+};
+
+#[derive(Debug)]
+pub struct RouteCreationError {
     invalid_connections: Vec<usize>,
-    points: &'a Vec<&'a Point<'a>>,
+    point_count: usize,
 }
 
-pub enum PathCreationError {
-    NoValidRoute,
+#[derive(Debug)]
+pub enum WebCreationError {
+    InvalidRoute,
     InvalidConnections {
         invalid_connections: Vec<(usize, usize)>,
         point_count: usize,
     },
 }
 
-pub struct Route<'a> {
-    web: &'a Web<'a>,
-    points: Vec<&'a Vector>,
+pub struct Route {
+    points: Vec<Vector>,
 }
 
-impl<'a> Route<'a> {
-    pub fn new<'b>(web: &Web, points: &'b Vec<&'a Point>) -> Result<Self, RouteCreationError<'b>>
-    where
-        'a: 'b,
-    {
+impl Route {
+    fn new(points: &Vec<Rc<RefCell<Point>>>) -> Result<Self, RouteCreationError> {
         let mut invalid_connections = vec![];
-        for (i, &point) in points.iter().enumerate().skip(1) {
-            if !point.is_neighbour(points[i - 1]) {
+        for (i, point) in points.iter().enumerate().skip(1) {
+            if !point.borrow().is_neighbour(&points[i - 1]) {
                 invalid_connections.push(i - 1);
             }
         }
         if invalid_connections.len() > 0 {
             Err(RouteCreationError {
                 invalid_connections,
-                points,
+                point_count: points.len(),
             })
         } else {
             Ok(Self {
-                web,
-                points: points.iter().map(|&x| x.position()).collect(),
+                points: points.iter().map(|x| *x.borrow().position()).collect(),
             })
         }
     }
 }
 
-pub struct Web<'a> {
-    points: Vec<Point<'a>>,
-    route: Route<'a>,
+pub struct Web {
+    points: Vec<Rc<RefCell<Point>>>,
+    route: Route,
 }
-impl<'a> Web<'a> {
+impl Web {
     pub fn new(
-        points: Vec<Vector>,
+        positions: Vec<Vector>,
         connections: Vec<(usize, usize)>,
-    ) -> Result<Self, PathCreationError> {
-        todo!()
+        route_indexes: Vec<usize>,
+    ) -> Result<Self, WebCreationError> {
+        if route_indexes.iter().any(|&x| x >= positions.len())
+            || connections
+                .iter()
+                .any(|&(a, b)| a >= positions.len() || b >= positions.len())
+        {
+            Err(WebCreationError::InvalidRoute)
+        } else {
+            let points: Vec<Rc<RefCell<Point>>> = positions
+                .iter()
+                .map(|&x| Rc::new(RefCell::new(Point::new(x))))
+                .collect();
+            for &(a, b) in connections.iter() {
+                // TODO: add an `add_connection` method which just adds one connection?
+                points[a]
+                    .borrow_mut()
+                    .add_connections(&vec![Rc::clone(&points[b])])
+            }
+            let route: Vec<_> = route_indexes
+                .iter()
+                .map(|&x| points[x].borrow().position)
+                .collect();
+            Ok(Self {
+                points,
+                route: Route { points: route },
+            })
+        }
+    }
+
+    pub fn draw(&self, ctx: &mut Context) {
+        self.points.iter().for_each(|x| {
+            x.borrow().connections.iter().for_each(|y| {
+                draw_line(
+                    ctx,
+                    x.borrow().position,
+                    y.borrow().position,
+                    2.0,
+                    Color::new(0.5, 0.5, 0.5, 1.0),
+                )
+            });
+        });
+        self.route
+            .points
+            .iter()
+            .skip(1)
+            .enumerate()
+            .for_each(|(i, &x)| draw_line(ctx, self.route.points[i].clone(), x, 3.5, Color::WHITE));
+        self.points
+            .iter()
+            .for_each(|x| draw_circle(ctx, x.borrow().position, 20.0, Color::WHITE));
     }
 }
 
-pub struct Point<'a> {
-    web: &'a Web<'a>,
+#[derive(Debug, Clone)]
+struct Point {
     position: Vector,
-    connections: Vec<&'a Point<'a>>,
+    connections: Vec<Rc<RefCell<Point>>>,
 }
-impl<'a> Point<'a> {
-    pub fn new(web: &Web, position: Vector) -> Self {
+impl Point {
+    pub fn new(position: Vector) -> Self {
         Self {
-            web,
             position,
             connections: vec![],
         }
@@ -73,31 +125,21 @@ impl<'a> Point<'a> {
         &self.position
     }
 
-    /// Returns the number of connections which were actually added.
-    /// Connections may be ignored if they refer to points which have already been added
-    /// And I don't like how this doesn't check if `connections` itself doesn't have any duplicates
-    /// TODO: fix that bug
-    /// And a point can't be connected to itself
-    pub fn add_connections(&mut self, connections: Vec<&'a Point>) -> usize {
-        let original_length = self.connections.len();
-        self.connections.extend(
-            connections
-                .iter()
-                .filter(|&&x| {
-                    !connections.iter().any(|&val| std::ptr::eq(val, x))
-                        && !self.connections.iter().any(|&val| std::ptr::eq(val, x))
-                })
-                .copied(),
-        );
-        self.connections.len() - original_length
+    pub fn add_connections(&mut self, connections: &Vec<Rc<RefCell<Point>>>) {
+        self.connections.reserve(connections.len());
+        for p in connections.iter() {
+            if self.connections.iter().all(|x| !Rc::ptr_eq(x, p)) {
+                self.connections.push(p.clone());
+            }
+        }
     }
 
-    pub fn is_neighbour(&self, point: &Point) -> bool {
-        self.connections.iter().any(|&x| std::ptr::eq(x, point))
+    pub fn is_neighbour(&self, point: &Rc<RefCell<Point>>) -> bool {
+        self.connections.iter().any(|x| Rc::ptr_eq(x, point))
     }
 
     /// TODO: optimise (maybe)
-    pub fn are_all_neighbours(&self, points: &Vec<&Point>) -> bool {
-        points.iter().all(|&point| self.is_neighbour(point))
+    pub fn are_all_neighbours(&self, points: &Vec<Rc<RefCell<Point>>>) -> bool {
+        points.iter().all(|point| self.is_neighbour(point))
     }
 }

@@ -1,5 +1,5 @@
 mod path;
-mod pathfind;
+// mod pathfind; // This is for prototype 2
 mod renderer;
 mod ui;
 mod vector;
@@ -25,15 +25,17 @@ pub struct GameState {
 
 impl GameState {
     pub fn new() -> Self {
-        let mut path = Web::new();
-        path.add_points(vec![
-            vec2d![10.0, 10.0],
-            vec2d![500.0, 100.0],
-            vec2d![150.0, 200.0],
-            vec2d![800.0, 1000.0],
-        ])
-        .add_connections(&vec![(0, 1), (1, 3), (3, 0)])
-        .expect("Tried building a path with invalid connections!");
+        let path = Web::new(
+            vec![
+                vec2d![10.0, 10.0],
+                vec2d![500.0, 100.0],
+                vec2d![150.0, 200.0],
+                vec2d![800.0, 1000.0],
+            ],
+            vec![(0, 1), (1, 3), (0, 2), (1, 2), (2, 3)],
+            vec![0, 1, 3],
+        )
+        .expect("Failed to build a path");
 
         Self { path }
     }
@@ -111,7 +113,7 @@ impl event::EventHandler<ggez::GameError> for MainState {
         graphics::clear(ctx, graphics::Color::from((0, 0, 0, 255)));
 
         self.state.path.draw(ctx);
-        self.menu.borrow().draw(ctx);
+        // self.menu.borrow().draw(ctx);
 
         graphics::set_canvas(ctx, None);
         graphics::draw(
