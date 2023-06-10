@@ -57,3 +57,29 @@ pub fn draw_text(
     let position: [f32; 2] = position.into();
     graphics::draw(ctx, &text, DrawParam::from((position, colour))).unwrap();
 }
+
+pub fn draw_line(ctx: &mut Context, a: Vector, b: Vector, thickness: f32, colour: Color) {
+    let mesh = MeshBuilder::new()
+        .line(&[[a.x, a.y], [b.x, b.y]], thickness, colour)
+        .unwrap()
+        .build(ctx)
+        .unwrap();
+    graphics::draw(ctx, &mesh, DrawParam::from(([0.0, 0.0], Color::WHITE))).unwrap();
+}
+
+pub fn draw_joined_lines(ctx: &mut Context, points: Vec<Vector>, thickness: f32, colour: Color) {
+    let mesh = MeshBuilder::new()
+        .line(
+            points
+                .iter()
+                .map(|p| [p.x, p.y])
+                .collect::<Vec<_>>()
+                .as_slice(),
+            thickness,
+            colour,
+        )
+        .unwrap()
+        .build(ctx)
+        .unwrap();
+    graphics::draw(ctx, &mesh, DrawParam::from(([0.0, 0.0], Color::WHITE))).unwrap();
+}
