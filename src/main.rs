@@ -1,5 +1,6 @@
 mod path;
 // mod pathfind; // This is for prototype 2
+mod enemy;
 mod renderer;
 mod ui;
 mod vector;
@@ -7,6 +8,7 @@ mod vector;
 use std::cell::RefCell;
 use std::rc::Rc;
 
+use enemy::enemy::{AliveEnemy, Enemy};
 use ggez::event;
 use ggez::graphics::{self, get_window_color_format, Color, Rect};
 use ggez::input::mouse;
@@ -19,11 +21,12 @@ use vector::*;
 pub const SCREEN_WIDTH: usize = 1920;
 pub const SCREEN_HEIGHT: usize = 1080;
 
-pub struct GameState {
+pub struct GameState<'a> {
     path: Web,
+    enemies: RefCell<Vec<Enemy<'a, AliveEnemy>>>,
 }
 
-impl GameState {
+impl<'a> GameState<'a> {
     pub fn new() -> Self {
         let path = Web::new(
             vec![
@@ -37,14 +40,17 @@ impl GameState {
         )
         .expect("Failed to build a path");
 
-        Self { path }
+        Self {
+            enemies: RefCell::new(vec![Enemy::new_random(path.route().clone())]),
+            path,
+        }
     }
 }
 
 pub struct MainState {
     canvas: graphics::Canvas,
-    menu: Rc<RefCell<Menu<'static, GameState>>>,
-    state: GameState,
+    menu: Rc<RefCell<Menu<'static, GameState<'static>>>>,
+    state: GameState<'static>,
 }
 
 pub fn mouse_position(ctx: &mut Context) -> Vector {
@@ -100,6 +106,8 @@ impl MainState {
 
 impl event::EventHandler<ggez::GameError> for MainState {
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
+        let enemies = Enemy::update_all(self.state.enemies.replace(Vec::new()));
+        self.state.enemies.replace(enemies);
         Ok(())
     }
 
@@ -113,6 +121,9 @@ impl event::EventHandler<ggez::GameError> for MainState {
         graphics::clear(ctx, graphics::Color::from((0, 0, 0, 255)));
 
         self.state.path.draw(ctx);
+        for enemy in self.state.enemies.borrow().iter() {
+            enemy.draw(ctx);
+        }
         // self.menu.borrow().draw(ctx);
 
         graphics::set_canvas(ctx, None);
