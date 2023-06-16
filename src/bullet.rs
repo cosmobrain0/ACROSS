@@ -62,7 +62,6 @@ pub mod bullet {
             }
         }
 
-        /// TODO: maybe RefCell is unnecessary?
         pub fn update_all<'b>(
             mut bullets: Vec<Bullet<'a, Alive>>,
             enemies: Vec<Enemy<'b, Alive>>,
@@ -126,7 +125,7 @@ pub mod bullet {
             let mut alive = true;
             while let Some(enemy) = enemies.pop() {
                 if enemy.collides(self.position, self.radius) {
-                    // TODO: damage enemy
+                    // TODO: damage enemy instead of just killing it
                     alive = false;
                 } else {
                     new_enemies.push(enemy);

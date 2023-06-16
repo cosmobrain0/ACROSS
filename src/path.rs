@@ -105,7 +105,6 @@ impl Web {
                 .map(|&x| Rc::new(RefCell::new(Point::new(x))))
                 .collect();
             for &(a, b) in connections.iter() {
-                // TODO: add an `add_connection` method which just adds one connection?
                 points[a]
                     .borrow_mut()
                     .add_connections(&vec![Rc::clone(&points[b])])
@@ -165,6 +164,12 @@ impl Point {
         &self.position
     }
 
+    pub fn add_connection(&mut self, connection: &Rc<RefCell<Point>>) {
+        if self.connections.iter().all(|x| !Rc::ptr_eq(x, connection)) {
+            self.connections.push(connection.clone());
+        }
+    }
+
     pub fn add_connections(&mut self, connections: &Vec<Rc<RefCell<Point>>>) {
         self.connections.reserve(connections.len());
         for p in connections.iter() {
@@ -180,7 +185,6 @@ impl Point {
             .any(|x| std::ptr::eq(x.as_ref().as_ptr(), point.as_ref().as_ptr()))
     }
 
-    /// TODO: optimise (maybe)
     pub fn are_all_neighbours(&self, points: &Vec<Rc<RefCell<Point>>>) -> bool {
         points.iter().all(|point| self.is_neighbour(point))
     }

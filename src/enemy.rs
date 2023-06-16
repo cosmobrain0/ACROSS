@@ -77,7 +77,8 @@ pub mod enemy {
             self.health() <= 0.0 || self.progress() >= 1.0
         }
         /// The radius of the enemy
-        /// TODO: consider replacing this with a Collider struct?
+        /// Originally intended to replace this with a Collider struct but that's overkill.
+        /// I can guarantee that I'll always use circles
         fn radius(&self) -> f32;
         /// Damage the enemy
         fn damage(&mut self, dmg: f32);
