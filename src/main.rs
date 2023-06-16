@@ -1,14 +1,17 @@
 mod path;
 // mod pathfind; // This is for prototype 2
+mod bullet;
 mod enemy;
 mod renderer;
+mod tower;
 mod ui;
 mod vector;
 
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use enemy::enemy::{AliveEnemy, Enemy};
+use bullet::bullet::Bullet;
+use enemy::enemy::Enemy;
 use ggez::event;
 use ggez::graphics::{self, get_window_color_format, Color, Rect};
 use ggez::input::mouse;
@@ -21,9 +24,21 @@ use vector::*;
 pub const SCREEN_WIDTH: usize = 1920;
 pub const SCREEN_HEIGHT: usize = 1080;
 
+#[derive(Debug, Clone, Copy)]
+pub struct Alive;
+#[derive(Debug, Clone, Copy)]
+pub struct Dead;
+
+#[derive(Debug)]
+pub enum Updated<AliveType, DeadType> {
+    Alive(AliveType),
+    Dead(DeadType),
+}
+
 pub struct GameState<'a> {
     path: Web,
-    enemies: RefCell<Vec<Enemy<'a, AliveEnemy>>>,
+    enemies: RefCell<Vec<Enemy<'a, Alive>>>,
+    bullets: RefCell<Vec<Bullet<'a, Alive>>>,
 }
 
 impl<'a> GameState<'a> {
@@ -42,6 +57,7 @@ impl<'a> GameState<'a> {
 
         Self {
             enemies: RefCell::new(vec![Enemy::new_random(path.route().clone())]),
+            bullets: RefCell::new(Vec::new()),
             path,
         }
     }
@@ -85,7 +101,6 @@ impl MainState {
         ];
         menu.borrow_mut().add_elements(buttons);
         let position = menu.borrow().elements[0].position();
-        println!("ElementOne(x={x}, y={y})", x = position.x, y = position.y);
         graphics::set_drawable_size(ctx, 1920.0 / 2.0, 1080.0 / 2.0).unwrap();
 
         let s = MainState {
@@ -106,7 +121,15 @@ impl MainState {
 
 impl event::EventHandler<ggez::GameError> for MainState {
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
+        let size = graphics::drawable_size(_ctx);
         let enemies = Enemy::update_all(self.state.enemies.replace(Vec::new()));
+        self.state.enemies.replace(enemies);
+        let (bullets, enemies) = Bullet::update_all(
+            self.state.bullets.replace(Vec::new()),
+            self.state.enemies.replace(Vec::new()),
+            vec2d![size.0, size.1],
+        );
+        self.state.bullets.replace(bullets);
         self.state.enemies.replace(enemies);
         Ok(())
     }
@@ -123,6 +146,9 @@ impl event::EventHandler<ggez::GameError> for MainState {
         self.state.path.draw(ctx);
         for enemy in self.state.enemies.borrow().iter() {
             enemy.draw(ctx);
+        }
+        for bullet in self.state.bullets.borrow().iter() {
+            bullet.draw(ctx);
         }
         // self.menu.borrow().draw(ctx);
 
@@ -146,10 +172,16 @@ impl event::EventHandler<ggez::GameError> for MainState {
         _y: f32,
     ) {
         match button {
-            event::MouseButton::Left => self
-                .menu
-                .borrow()
-                .input_at(mouse_position(ctx), &mut self.state),
+            event::MouseButton::Left => {
+                self.menu
+                    .borrow()
+                    .input_at(mouse_position(ctx), &mut self.state);
+                let pos = mouse_position(ctx);
+                self.state
+                    .bullets
+                    .borrow_mut()
+                    .push(Bullet::debug_spawn(vec2d![50.0, 50.0], pos));
+            }
             _ => (),
         }
     }
