@@ -35,10 +35,17 @@ pub mod tower {
     pub trait Range {
         fn draw(&self, ctx: &mut Context);
     }
-    pub struct CircularRange {}
+    pub struct CircularRange {
+        position: Vector,
+    }
     impl Range for CircularRange {
         fn draw(&self, ctx: &mut Context) {
-            todo!()
+            draw_circle(
+                ctx,
+                self.position,
+                60.0,
+                Color::from_rgba(255, 255, 255, 100),
+            );
         }
     }
 
@@ -63,7 +70,7 @@ pub mod tower {
                 time_to_next_shot: Self::cooldown(),
                 position,
                 bullets: RefCell::new(vec![]),
-                range: CircularRange {},
+                range: CircularRange { position },
             }
         }
     }
@@ -87,6 +94,7 @@ pub mod tower {
                             self,
                             self.position + Vector::from_polar(random::<f32>() * 2.0 * PI, 4.0),
                         )));
+                    self.time_to_next_shot = TestTower::cooldown();
                 }
 
                 _ => self.time_to_next_shot -= 1,
@@ -100,6 +108,7 @@ pub mod tower {
 
         fn draw(&self, ctx: &mut Context) {
             self.range.draw(ctx);
+            self.bullets.borrow().iter().for_each(|x| x.draw(ctx));
             draw_circle(
                 ctx,
                 self.position(),

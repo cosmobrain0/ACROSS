@@ -131,6 +131,10 @@ impl event::EventHandler<ggez::GameError> for MainState {
             self.state.enemies.replace(Vec::new()),
             vec2d![size.0, size.1],
         );
+        let enemies = self
+            .state
+            .tower
+            .update(enemies, vec2d! {SCREEN_WIDTH as f32, SCREEN_HEIGHT as f32});
         self.state.bullets.replace(bullets);
         self.state.enemies.replace(enemies);
         Ok(())
@@ -152,6 +156,7 @@ impl event::EventHandler<ggez::GameError> for MainState {
         for bullet in self.state.bullets.borrow().iter() {
             bullet.draw(ctx);
         }
+        self.state.tower.draw(ctx);
         // self.menu.borrow().draw(ctx);
 
         graphics::set_canvas(ctx, None);

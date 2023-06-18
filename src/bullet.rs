@@ -107,7 +107,11 @@ pub mod bullet {
         where
             Self: Sized,
         {
-            todo!()
+            Box::new(Self {
+                position: tower.position(),
+                velocity: (target - tower.position()).normalised() * 3.0,
+                radius: 5.0,
+            }) as Box<dyn BulletTrait<'a> + 'a>
         }
 
         fn tower(&self) -> &'a dyn Tower {
