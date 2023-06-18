@@ -79,6 +79,7 @@ pub mod bullet {
             (new_bullets, new_enemies)
         }
 
+        /// Just for testing
         pub fn debug_spawn(position: Vector, target: Vector) -> Bullet<'a, Alive> {
             Bullet {
                 bullet: Box::new(Projectile {

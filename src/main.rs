@@ -18,7 +18,7 @@ use ggez::input::mouse;
 use ggez::{Context, GameResult};
 
 use path::Web;
-use tower::tower::{TestTower, Tower};
+use tower::tower::{spawn_tower, TestTower, Tower};
 use ui::{Button, Menu};
 use vector::*;
 
@@ -61,7 +61,7 @@ impl<'a> GameState<'a> {
             enemies: RefCell::new(vec![Enemy::new_random(path.route().clone())]),
             bullets: RefCell::new(Vec::new()),
             path,
-            tower: TestTower::spawn(vec2d![SCREEN_WIDTH as f32, SCREEN_HEIGHT as f32]),
+            tower: TestTower::debug_spawn(vec2d![100.0, 100.0]),
         }
     }
 }

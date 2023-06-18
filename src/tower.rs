@@ -34,18 +34,40 @@ pub mod tower {
     /// The view of a tower
     pub trait Range {
         fn draw(&self, ctx: &mut Context);
+        fn get_target<'a, 'b>(
+            &self,
+            enemies: &'b Vec<Enemy<'a, Alive>>,
+        ) -> Option<&'b Enemy<'a, Alive>>
+        where
+            'a: 'b;
     }
     pub struct CircularRange {
         position: Vector,
+        radius: f32,
     }
     impl Range for CircularRange {
         fn draw(&self, ctx: &mut Context) {
             draw_circle(
                 ctx,
                 self.position,
-                60.0,
+                self.radius,
                 Color::from_rgba(255, 255, 255, 100),
             );
+        }
+
+        fn get_target<'a, 'b>(
+            &self,
+            enemies: &'b Vec<Enemy<'a, Alive>>,
+        ) -> Option<&'b Enemy<'a, Alive>>
+        where
+            'a: 'b,
+        {
+            for enemy in enemies {
+                if enemy.collides(self.position, self.radius) {
+                    return Some(enemy);
+                }
+            }
+            None
         }
     }
 
@@ -59,7 +81,7 @@ pub mod tower {
         bullets: RefCell<Vec<Bullet<'t, Alive>>>,
         range: CircularRange,
     }
-    impl TestTower<'_> {
+    impl<'t> TestTower<'t> {
         #[inline(always)]
         fn cooldown() -> usize {
             60
@@ -70,8 +92,16 @@ pub mod tower {
                 time_to_next_shot: Self::cooldown(),
                 position,
                 bullets: RefCell::new(vec![]),
-                range: CircularRange { position },
+                range: CircularRange {
+                    position,
+                    radius: 150.0,
+                },
             }
+        }
+
+        /// Just for testing
+        pub fn debug_spawn(position: Vector) -> Box<dyn Tower<'t> + 't> {
+            Box::new(Self::new(position)) as Box<dyn Tower>
         }
     }
     impl<'t> Tower<'t> for TestTower<'t> {
@@ -88,15 +118,16 @@ pub mod tower {
             match self.time_to_next_shot {
                 0 => {
                     // shoot!
-                    self.bullets
-                        .borrow_mut()
-                        .push(Bullet::new(Projectile::spawn(
-                            self,
-                            self.position + Vector::from_polar(random::<f32>() * 2.0 * PI, 4.0),
-                        )));
-                    self.time_to_next_shot = TestTower::cooldown();
+                    match self.range.get_target(&enemies) {
+                        Some(enemy) => {
+                            self.bullets
+                                .borrow_mut()
+                                .push(Bullet::new(Projectile::spawn(self, enemy.position())));
+                            self.time_to_next_shot = TestTower::cooldown();
+                        }
+                        None => (),
+                    }
                 }
-
                 _ => self.time_to_next_shot -= 1,
             }
             let bullets = Vec::with_capacity(self.bullets.borrow().len());

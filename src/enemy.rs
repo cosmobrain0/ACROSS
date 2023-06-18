@@ -56,6 +56,10 @@ pub mod enemy {
         pub fn collides(&self, position: Vector, radius: f32) -> bool {
             self.enemy.collides(position, radius)
         }
+
+        pub fn position(&self) -> Vector {
+            self.enemy.position()
+        }
     }
 
     pub trait EnemyTrait<'a>: std::fmt::Debug {
