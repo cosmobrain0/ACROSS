@@ -40,17 +40,17 @@ pub struct GameState<'a> {
     path: Web,
     enemies: RefCell<Vec<Enemy<'a, Alive>>>,
     bullets: RefCell<Vec<Bullet<'a, Alive>>>,
-    tower: Box<dyn Tower<'a> + 'a>,
+    towers: Vec<Box<dyn Tower<'a> + 'a>>,
 }
 
 impl<'a> GameState<'a> {
     pub fn new() -> Self {
         let path = Web::new(
             vec![
-                vec2d![10.0, 10.0],
-                vec2d![500.0, 100.0],
-                vec2d![150.0, 200.0],
-                vec2d![800.0, 1000.0],
+                vec2d![210.0, 10.0],
+                vec2d![700.0, 100.0],
+                vec2d![350.0, 200.0],
+                vec2d![1000.0, 1000.0],
             ],
             vec![(0, 1), (1, 3), (0, 2), (1, 2), (2, 3)],
             vec![0, 1, 3],
@@ -61,7 +61,7 @@ impl<'a> GameState<'a> {
             enemies: RefCell::new(vec![Enemy::new_random(path.route().clone())]),
             bullets: RefCell::new(Vec::new()),
             path,
-            tower: TestTower::debug_spawn(vec2d![100.0, 100.0]),
+            towers: Vec::new(),
         }
     }
 }
@@ -75,33 +75,28 @@ pub struct MainState {
 pub fn mouse_position(ctx: &mut Context) -> Vector {
     let mouse_position = mouse::position(ctx);
     let window_size = graphics::drawable_size(ctx);
-    vec2d!(
+    vec2d![
         mouse_position.x * SCREEN_WIDTH as f32 / window_size.0,
         mouse_position.y * SCREEN_HEIGHT as f32 / window_size.1
-    )
+    ]
 }
 
 impl MainState {
     fn new(ctx: &mut Context) -> GameResult<MainState> {
         let menu = Rc::new(RefCell::new(Menu::new(vec2d!(0.0, 0.0), 1.0, None)));
-        let buttons = vec![
-            Button::new(
-                vec2d!(0.0, 0.0),
-                vec2d!(75.0, 20.0),
-                menu.clone(),
-                |_| println!("Hi"),
-                "Hi",
-            )
-            .into(),
-            Button::new(
-                vec2d!(75.0, 75.0),
-                vec2d!(100.0, 60.0),
-                menu.clone(),
-                |_| println!("Hello"),
-                "Hello",
-            )
-            .into(),
-        ];
+        let buttons = vec![Button::new(
+            vec2d![0.0, 100.0],
+            vec2d![100.0, 100.0],
+            Rc::clone(&menu),
+            |state: &mut GameState| {
+                state.towers.push(spawn_tower(vec2d![
+                    SCREEN_WIDTH as f32,
+                    SCREEN_HEIGHT as f32
+                ]));
+            },
+            "Spawn Tower",
+        )
+        .into()];
         menu.borrow_mut().add_elements(buttons);
         graphics::set_drawable_size(ctx, 1920.0 / 2.0, 1080.0 / 2.0).unwrap();
 
@@ -126,15 +121,14 @@ impl event::EventHandler<ggez::GameError> for MainState {
         let size = graphics::drawable_size(_ctx);
         let enemies = Enemy::update_all(self.state.enemies.replace(Vec::new()));
         self.state.enemies.replace(enemies);
-        let (bullets, enemies) = Bullet::update_all(
+        let (bullets, mut enemies) = Bullet::update_all(
             self.state.bullets.replace(Vec::new()),
             self.state.enemies.replace(Vec::new()),
             vec2d![size.0, size.1],
         );
-        let enemies = self
-            .state
-            .tower
-            .update(enemies, vec2d! {SCREEN_WIDTH as f32, SCREEN_HEIGHT as f32});
+        for tower in self.state.towers.iter_mut() {
+            enemies = tower.update(enemies, vec2d! {SCREEN_WIDTH as f32, SCREEN_HEIGHT as f32});
+        }
         self.state.bullets.replace(bullets);
         self.state.enemies.replace(enemies);
         Ok(())
@@ -156,8 +150,10 @@ impl event::EventHandler<ggez::GameError> for MainState {
         for bullet in self.state.bullets.borrow().iter() {
             bullet.draw(ctx);
         }
-        self.state.tower.draw(ctx);
-        // self.menu.borrow().draw(ctx);
+        for tower in &self.state.towers {
+            tower.draw(ctx);
+        }
+        self.menu.borrow().draw(ctx);
 
         graphics::set_canvas(ctx, None);
         graphics::draw(
@@ -183,11 +179,6 @@ impl event::EventHandler<ggez::GameError> for MainState {
                 self.menu
                     .borrow()
                     .input_at(mouse_position(ctx), &mut self.state);
-                let pos = mouse_position(ctx);
-                self.state
-                    .bullets
-                    .borrow_mut()
-                    .push(Bullet::debug_spawn(vec2d![50.0, 50.0], pos));
             }
             _ => (),
         }
