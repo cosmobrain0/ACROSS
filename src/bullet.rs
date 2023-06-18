@@ -13,7 +13,7 @@ pub mod bullet {
 
     pub trait BulletTrait<'a>: std::fmt::Debug {
         /// create a new bullet
-        fn spawn(tower: &impl Tower, target: Vector) -> Box<dyn BulletTrait<'a> + 'a>
+        fn spawn(tower: &impl Tower<'a>, target: Vector) -> Box<dyn BulletTrait<'a> + 'a>
         where
             Self: Sized;
         fn tower(&self) -> &'a dyn Tower;
@@ -95,15 +95,15 @@ pub mod bullet {
         }
     }
 
-    #[derive(Debug)]
-    struct Projectile {
+    #[derive(Debug, Clone)]
+    pub struct Projectile {
         position: Vector,
         velocity: Vector,
         radius: f32,
     }
 
     impl<'a> BulletTrait<'a> for Projectile {
-        fn spawn(tower: &impl Tower, target: Vector) -> Box<dyn BulletTrait<'a> + 'a>
+        fn spawn(tower: &impl Tower<'a>, target: Vector) -> Box<dyn BulletTrait<'a> + 'a>
         where
             Self: Sized,
         {

@@ -18,6 +18,7 @@ use ggez::input::mouse;
 use ggez::{Context, GameResult};
 
 use path::Web;
+use tower::tower::{TestTower, Tower};
 use ui::{Button, Menu};
 use vector::*;
 
@@ -39,6 +40,7 @@ pub struct GameState<'a> {
     path: Web,
     enemies: RefCell<Vec<Enemy<'a, Alive>>>,
     bullets: RefCell<Vec<Bullet<'a, Alive>>>,
+    tower: Box<dyn Tower<'a> + 'a>,
 }
 
 impl<'a> GameState<'a> {
@@ -59,6 +61,7 @@ impl<'a> GameState<'a> {
             enemies: RefCell::new(vec![Enemy::new_random(path.route().clone())]),
             bullets: RefCell::new(Vec::new()),
             path,
+            tower: TestTower::spawn(vec2d![SCREEN_WIDTH as f32, SCREEN_HEIGHT as f32]),
         }
     }
 }
@@ -100,7 +103,6 @@ impl MainState {
             .into(),
         ];
         menu.borrow_mut().add_elements(buttons);
-        let position = menu.borrow().elements[0].position();
         graphics::set_drawable_size(ctx, 1920.0 / 2.0, 1080.0 / 2.0).unwrap();
 
         let s = MainState {
