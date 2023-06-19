@@ -19,7 +19,7 @@ use ggez::{Context, GameResult};
 
 use path::Web;
 use tower::tower::{spawn_tower, TestTower, Tower};
-use ui::{Button, Menu};
+use ui::{Button, DragButton, Menu};
 use vector::*;
 
 pub const SCREEN_WIDTH: usize = 1920;
@@ -41,6 +41,7 @@ pub struct GameState<'a> {
     enemies: RefCell<Vec<Enemy<'a, Alive>>>,
     bullets: RefCell<Vec<Bullet<'a, Alive>>>,
     towers: Vec<Box<dyn Tower<'a> + 'a>>,
+    hover_position: Option<Vector>,
 }
 
 impl<'a> GameState<'a> {
@@ -62,6 +63,7 @@ impl<'a> GameState<'a> {
             bullets: RefCell::new(Vec::new()),
             path,
             towers: Vec::new(),
+            hover_position: None,
         }
     }
 }
@@ -83,20 +85,33 @@ pub fn mouse_position(ctx: &mut Context) -> Vector {
 
 impl MainState {
     fn new(ctx: &mut Context) -> GameResult<MainState> {
-        let menu = Rc::new(RefCell::new(Menu::new(vec2d!(0.0, 0.0), 1.0, None)));
-        let buttons = vec![Button::new(
-            vec2d![0.0, 100.0],
-            vec2d![100.0, 100.0],
-            Rc::clone(&menu),
-            |state: &mut GameState| {
-                state.towers.push(spawn_tower(vec2d![
-                    SCREEN_WIDTH as f32,
-                    SCREEN_HEIGHT as f32
-                ]));
-            },
-            "Spawn Tower",
-        )
-        .into()];
+        let menu: Rc<RefCell<Menu<GameState>>> =
+            Rc::new(RefCell::new(Menu::new(vec2d!(0.0, 0.0), 1.0, None)));
+        let buttons = vec![
+            Button::new(
+                vec2d![0.0, 100.0],
+                vec2d![100.0, 100.0],
+                Rc::clone(&menu),
+                |state: &mut GameState| {
+                    state.towers.push(spawn_tower(vec2d![
+                        SCREEN_WIDTH as f32,
+                        SCREEN_HEIGHT as f32
+                    ]));
+                },
+                "Spawn Tower",
+            )
+            .into(),
+            DragButton::new(
+                vec2d![0.0, 300.0],
+                vec2d![75.0, 75.0],
+                Rc::clone(&menu),
+                |start, state| state.hover_position = Some(start),
+                |start, position, movement, state| state.hover_position = Some(position),
+                |start, position, state| state.hover_position = None,
+                "Drag!",
+            )
+            .into(),
+        ];
         menu.borrow_mut().add_elements(buttons);
         graphics::set_drawable_size(ctx, 1920.0 / 2.0, 1080.0 / 2.0).unwrap();
 
@@ -167,6 +182,31 @@ impl event::EventHandler<ggez::GameError> for MainState {
         Ok(())
     }
 
+    fn mouse_button_down_event(
+        &mut self,
+        ctx: &mut Context,
+        button: event::MouseButton,
+        _x: f32,
+        _y: f32,
+    ) {
+        match button {
+            event::MouseButton::Left => {
+                self.menu
+                    .borrow_mut()
+                    .input_start(mouse_position(ctx), &mut self.state);
+            }
+            _ => (),
+        }
+    }
+
+    fn mouse_motion_event(&mut self, _ctx: &mut Context, x: f32, y: f32, dx: f32, dy: f32) {
+        if let Ok(mut menu) = self.menu.try_borrow_mut() {
+            menu.input_moved(vec2d![x, y], vec2d![dx, dy], &mut self.state);
+        } else {
+            println!("Can't borrow menu!");
+        }
+    }
+
     fn mouse_button_up_event(
         &mut self,
         ctx: &mut Context,
@@ -177,8 +217,8 @@ impl event::EventHandler<ggez::GameError> for MainState {
         match button {
             event::MouseButton::Left => {
                 self.menu
-                    .borrow()
-                    .input_at(mouse_position(ctx), &mut self.state);
+                    .borrow_mut()
+                    .input_released(mouse_position(ctx), &mut self.state);
             }
             _ => (),
         }

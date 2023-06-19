@@ -15,6 +15,7 @@ use crate::{
 pub enum UIElement<'a, T> {
     Button(Button<'a, T>),
     Menu(Menu<'a, T>),
+    DragButton(DragButton<'a, T>),
 }
 
 impl<T> UIElement<'_, T> {
@@ -22,6 +23,7 @@ impl<T> UIElement<'_, T> {
         match self {
             UIElement::Button(x) => vec2d!(x.x(), x.y()),
             UIElement::Menu(x) => x.position(),
+            UIElement::DragButton(x) => vec2d![x.button().x(), x.button().y()],
         }
     }
 
@@ -29,6 +31,7 @@ impl<T> UIElement<'_, T> {
         match self {
             UIElement::Button(x) => vec2d!(x.width(), x.height()),
             UIElement::Menu(x) => x.size(),
+            UIElement::DragButton(x) => vec2d![x.button().width(), x.button().height()],
         }
     }
 
@@ -36,17 +39,36 @@ impl<T> UIElement<'_, T> {
         match self {
             UIElement::Button(x) => x.draw(ctx),
             UIElement::Menu(x) => x.draw(ctx),
+            UIElement::DragButton(x) => x.button().draw(ctx),
         }
     }
 
-    pub fn input_at(&self, position: Vector, state: &mut T) {
+    pub fn input_start(&mut self, position: Vector, state: &mut T) {
         match self {
-            UIElement::Button(x) => x.input_at(position, state),
-            UIElement::Menu(x) => x.input_at(position, state),
+            UIElement::Menu(x) => x.input_start(position, state),
+            UIElement::DragButton(x) => x.input_start(position, state),
+            _ => (),
+        }
+    }
+
+    pub fn input_moved(&mut self, position: Vector, movement: Vector, state: &mut T) {
+        match self {
+            UIElement::Menu(x) => x.input_moved(position, movement, state),
+            UIElement::DragButton(x) => x.input_moved(position, movement, state),
+            _ => (),
+        }
+    }
+
+    pub fn input_released(&mut self, position: Vector, state: &mut T) {
+        match self {
+            UIElement::Button(x) => x.input_released(position, state),
+            UIElement::Menu(x) => x.input_released(position, state),
+            UIElement::DragButton(x) => x.input_released(position, state),
         }
     }
 }
 
+/// TODO: why is parent not just a &'a Menu?
 pub struct Button<'a, T> {
     parent: Rc<RefCell<Menu<'a, T>>>,
     position: Vector,
@@ -118,7 +140,7 @@ impl<'a, T> Button<'a, T> {
         );
     }
 
-    pub fn input_at(&self, position: Vector, state: &mut T) {
+    pub fn input_released(&self, position: Vector, state: &mut T) {
         if self.is_hovered(position) {
             self.click(state);
         }
@@ -198,15 +220,15 @@ impl<'a, T> Menu<'a, T> {
         self.elements.iter().for_each(|x| x.draw(ctx));
     }
 
-    pub fn input_at(&self, position: Vector, state: &mut T) {
+    pub fn input_released(&mut self, position: Vector, state: &mut T) {
         let bounds = self.bounds();
         if bounds.0.x <= position.x
             && bounds.0.y <= position.y
             && bounds.1.x >= position.x
             && bounds.1.y >= position.y
         {
-            for element in &self.elements {
-                element.input_at(position, state);
+            for element in self.elements.iter_mut() {
+                element.input_released(position, state);
             }
         }
     }
@@ -217,6 +239,33 @@ impl<'a, T> Menu<'a, T> {
 
     pub fn set_scale(&mut self, scale: f32) {
         self.scale = scale;
+    }
+
+    pub fn input_moved(&mut self, position: Vector, movement: Vector, state: &mut T) {
+        let bounds = self.bounds();
+        if bounds.0.x <= position.x
+            && bounds.0.y <= position.y
+            && bounds.1.x >= position.x
+            && bounds.1.y >= position.y
+        {
+            for element in self.elements.iter_mut() {
+                element.input_moved(position, movement, state)
+            }
+        }
+    }
+
+    /// TODO: make a hovered method to avoid repetition?
+    pub fn input_start(&mut self, position: Vector, state: &mut T) {
+        let bounds = self.bounds();
+        if bounds.0.x <= position.x
+            && bounds.0.y <= position.y
+            && bounds.1.x >= position.x
+            && bounds.1.y >= position.y
+        {
+            for element in self.elements.iter_mut() {
+                element.input_start(position, state);
+            }
+        }
     }
 }
 
@@ -234,5 +283,79 @@ impl<T> Default for Menu<'_, T> {
             elements: vec![],
             parent: None,
         }
+    }
+}
+
+/// TODO: maybe use composition here?
+/// Actually no, that shuold be done now, not later
+pub struct DragButton<'a, T> {
+    parent: Rc<RefCell<Menu<'a, T>>>,
+    button: Button<'a, T>,
+    drag_start: Option<Vector>,
+    /// self.start_callback(position, state);
+    start_callback: fn(Vector, &mut T),
+    /// self.moved_callback(start, position, movement, state);
+    moved_callback: fn(Vector, Vector, Vector, &mut T),
+    /// self.released_callback(start, position, state);
+    released_callback: fn(Vector, Vector, &mut T),
+}
+impl<'a, T> DragButton<'a, T> {
+    pub fn new(
+        position: Vector,
+        size: Vector,
+        parent: Rc<RefCell<Menu<'a, T>>>,
+        start_callback: fn(Vector, &mut T),
+        moved_callback: fn(Vector, Vector, Vector, &mut T),
+        released_callback: fn(Vector, Vector, &mut T),
+        text: &str,
+    ) -> Self
+    where
+        T: Sized,
+    {
+        Self {
+            parent: Rc::clone(&parent),
+            button: Button::new(position, size, parent, |_| (), text),
+            drag_start: None,
+            start_callback,
+            moved_callback,
+            released_callback,
+        }
+    }
+
+    pub fn button<'b>(&'b self) -> &'b Button<'a, T>
+    where
+        'a: 'b,
+    {
+        &self.button
+    }
+
+    pub fn input_start(&mut self, position: Vector, state: &mut T) {
+        if self.button.is_hovered(position) {
+            self.drag_start = Some(position);
+            let callback = self.start_callback;
+            callback(position, state);
+        }
+    }
+
+    /// TODO: completely re-write. This does NOT work
+    pub fn input_released(&mut self, position: Vector, state: &mut T) {
+        if let Some(start) = self.drag_start {
+            let callback = self.released_callback;
+            callback(start, position, state);
+            self.drag_start = None;
+        }
+    }
+
+    /// TODO: should this button keep track of the exact path which the mouse follows?
+    pub fn input_moved(&mut self, position: Vector, movement: Vector, state: &mut T) {
+        if let Some(start) = self.drag_start {
+            let callback = self.moved_callback;
+            callback(start, position, movement, state);
+        }
+    }
+}
+impl<'a, T> Into<UIElement<'a, T>> for DragButton<'a, T> {
+    fn into(self) -> UIElement<'a, T> {
+        UIElement::DragButton(self)
     }
 }
