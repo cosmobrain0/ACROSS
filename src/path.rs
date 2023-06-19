@@ -111,8 +111,6 @@ impl Web {
             }
             let route: Vec<_> = route_indexes.iter().map(|&x| points[x].clone()).collect();
             let route = Route::new(&route);
-            dbg!(&points); // correctly connected
-            dbg!(&route);
             match route {
                 Ok(x) => Ok(Self { points, route: x }),
                 Err(_) => Err(WebCreationError::InvalidRoute),

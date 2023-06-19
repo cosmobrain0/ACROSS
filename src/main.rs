@@ -207,11 +207,9 @@ impl event::EventHandler<ggez::GameError> for MainState {
     }
 
     fn mouse_motion_event(&mut self, ctx: &mut Context, x: f32, y: f32, dx: f32, dy: f32) {
-        if let Ok(mut menu) = self.menu.try_borrow_mut() {
-            menu.input_moved(mouse_position(ctx), vec2d![dx, dy], &mut self.state);
-        } else {
-            println!("Can't borrow menu!");
-        }
+        self.menu
+            .borrow_mut()
+            .input_moved(mouse_position(ctx), vec2d![dx, dy], &mut self.state);
     }
 
     fn mouse_button_up_event(

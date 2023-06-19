@@ -367,9 +367,7 @@ impl<'a, T> DragButton<'a, T> {
     }
 
     pub fn input_start(&mut self, position: Vector, state: &mut T) {
-        println!("Input start");
         if self.button.local_hovers(position) {
-            println!("Input on draggable");
             self.drag_start = Some(position);
             let callback = self.start_callback;
             callback(position, state);
