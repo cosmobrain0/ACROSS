@@ -128,9 +128,9 @@ impl<'a, T> Button<'a, T> {
 
     pub fn local_hovers(&self, mouse: Vector) -> bool {
         self.position.x <= mouse.x
-            && self.position.x <= mouse.y
+            && self.position.y <= mouse.y
             && self.position.x + self.size.x >= mouse.x
-            && self.position.x + self.size.y >= mouse.y
+            && self.position.y + self.size.y >= mouse.y
     }
 
     pub fn click(&self, state: &mut T) {
@@ -271,8 +271,9 @@ impl<'a, T> Menu<'a, T> {
 
     pub fn input_released(&mut self, position: Vector, state: &mut T) {
         if self.local_hovers(position) {
+            let local_position = self.position;
             for element in self.elements.iter_mut() {
-                element.input_released((position - self.position) / self.scale, state);
+                element.input_released((position - local_position) / self.scale, state);
             }
         }
     }
@@ -287,9 +288,10 @@ impl<'a, T> Menu<'a, T> {
 
     pub fn input_moved(&mut self, position: Vector, movement: Vector, state: &mut T) {
         if self.local_hovers(position) {
+            let local_position = self.position;
             for element in self.elements.iter_mut() {
                 element.input_moved(
-                    (position - self.position) / self.scale,
+                    (position - local_position) / self.scale,
                     movement / self.scale,
                     state,
                 )
@@ -300,8 +302,9 @@ impl<'a, T> Menu<'a, T> {
     /// TODO: make a hovered method to avoid repetition?
     pub fn input_start(&mut self, position: Vector, state: &mut T) {
         if self.local_hovers(position) {
+            let local_position = self.position;
             for element in self.elements.iter_mut() {
-                element.input_start((position - self.position) / self.scale, state);
+                element.input_start((position - local_position) / self.scale, state);
             }
         }
     }
@@ -368,6 +371,7 @@ impl<'a, T> DragButton<'a, T> {
     }
 
     pub fn input_start(&mut self, position: Vector, state: &mut T) {
+        println!("Input start");
         if self.button.local_hovers(position) {
             println!("Input on draggable");
             self.drag_start = Some(position);
