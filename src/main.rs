@@ -18,6 +18,7 @@ use ggez::input::mouse;
 use ggez::{Context, GameResult};
 
 use path::Web;
+use renderer::draw_circle;
 use tower::tower::{spawn_tower, TestTower, Tower};
 use ui::{Button, DragButton, Menu};
 use vector::*;
@@ -169,6 +170,9 @@ impl event::EventHandler<ggez::GameError> for MainState {
             tower.draw(ctx);
         }
         self.menu.borrow().draw(ctx);
+        if let Some(position) = self.state.hover_position {
+            draw_circle(ctx, position, 10.0, Color::WHITE);
+        }
 
         graphics::set_canvas(ctx, None);
         graphics::draw(
@@ -199,9 +203,9 @@ impl event::EventHandler<ggez::GameError> for MainState {
         }
     }
 
-    fn mouse_motion_event(&mut self, _ctx: &mut Context, x: f32, y: f32, dx: f32, dy: f32) {
+    fn mouse_motion_event(&mut self, ctx: &mut Context, x: f32, y: f32, dx: f32, dy: f32) {
         if let Ok(mut menu) = self.menu.try_borrow_mut() {
-            menu.input_moved(vec2d![x, y], vec2d![dx, dy], &mut self.state);
+            menu.input_moved(mouse_position(ctx), vec2d![dx, dy], &mut self.state);
         } else {
             println!("Can't borrow menu!");
         }

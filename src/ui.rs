@@ -270,11 +270,9 @@ impl<'a, T> Menu<'a, T> {
     }
 
     pub fn input_released(&mut self, position: Vector, state: &mut T) {
-        if self.local_hovers(position) {
-            let local_position = self.position;
-            for element in self.elements.iter_mut() {
-                element.input_released((position - local_position) / self.scale, state);
-            }
+        let local_position = self.position;
+        for element in self.elements.iter_mut() {
+            element.input_released((position - local_position) / self.scale, state);
         }
     }
 
@@ -287,15 +285,13 @@ impl<'a, T> Menu<'a, T> {
     }
 
     pub fn input_moved(&mut self, position: Vector, movement: Vector, state: &mut T) {
-        if self.local_hovers(position) {
-            let local_position = self.position;
-            for element in self.elements.iter_mut() {
-                element.input_moved(
-                    (position - local_position) / self.scale,
-                    movement / self.scale,
-                    state,
-                )
-            }
+        let local_position = self.position;
+        for element in self.elements.iter_mut() {
+            element.input_moved(
+                (position - local_position) / self.scale,
+                movement / self.scale,
+                state,
+            )
         }
     }
 
