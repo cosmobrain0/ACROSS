@@ -35,6 +35,22 @@ impl<T> UIElement<'_, T> {
         }
     }
 
+    pub fn local_size(&self) -> Vector {
+        match self {
+            UIElement::Button(x) => x.size,
+            UIElement::Menu(x) => x.local_size(),
+            UIElement::DragButton(x) => x.button.size,
+        }
+    }
+
+    pub fn local_position(&self) -> Vector {
+        match self {
+            UIElement::Button(x) => x.position,
+            UIElement::Menu(x) => x.position,
+            UIElement::DragButton(x) => x.button.position,
+        }
+    }
+
     pub fn draw(&self, ctx: &mut Context) {
         match self {
             UIElement::Button(x) => x.draw(ctx),
@@ -110,11 +126,11 @@ impl<'a, T> Button<'a, T> {
         }
     }
 
-    pub fn is_hovered(&self, mouse: Vector) -> bool {
-        self.x() <= mouse.x
-            && self.y() <= mouse.y
-            && self.x() + self.width() >= mouse.x
-            && self.y() + self.height() >= mouse.y
+    pub fn local_hovers(&self, mouse: Vector) -> bool {
+        self.position.x <= mouse.x
+            && self.position.x <= mouse.y
+            && self.position.x + self.size.x >= mouse.x
+            && self.position.x + self.size.y >= mouse.y
     }
 
     pub fn click(&self, state: &mut T) {
@@ -141,7 +157,7 @@ impl<'a, T> Button<'a, T> {
     }
 
     pub fn input_released(&self, position: Vector, state: &mut T) {
-        if self.is_hovered(position) {
+        if self.local_hovers(position) {
             self.click(state);
         }
     }
@@ -204,8 +220,23 @@ impl<'a, T> Menu<'a, T> {
         })
     }
 
+    pub fn local_bounds(&self) -> (Vector, Vector) {
+        let initial: Vector = self.elements[0].local_position();
+        let initial: (Vector, Vector) = (initial, initial);
+        self.elements.iter().fold(initial, |bounds, element| {
+            let position = element.local_position();
+            let size = element.local_size();
+            (bounds.0.min(position), bounds.1.max(position + size))
+        })
+    }
+
     pub fn size(&self) -> Vector {
         let bounds = self.bounds();
+        bounds.1 - bounds.0
+    }
+
+    pub fn local_size(&self) -> Vector {
+        let bounds = self.local_bounds();
         bounds.1 - bounds.0
     }
 
@@ -220,15 +251,24 @@ impl<'a, T> Menu<'a, T> {
         self.elements.iter().for_each(|x| x.draw(ctx));
     }
 
+    pub fn hovers(&self, global_position: Vector) -> bool {
+        global_position.x >= self.position().x
+            && global_position.x <= self.position().x + self.size().x
+            && global_position.y >= self.position().y
+            && global_position.y <= self.position().y + self.size().y
+    }
+
+    pub fn local_hovers(&self, position: Vector) -> bool {
+        position.x >= self.position.x
+            && position.y >= self.position.y
+            && position.x <= self.position.x + self.local_size().x
+            && position.y <= self.position.y + self.local_size().y
+    }
+
     pub fn input_released(&mut self, position: Vector, state: &mut T) {
-        let bounds = self.bounds();
-        if bounds.0.x <= position.x
-            && bounds.0.y <= position.y
-            && bounds.1.x >= position.x
-            && bounds.1.y >= position.y
-        {
+        if self.local_hovers(position) {
             for element in self.elements.iter_mut() {
-                element.input_released(position, state);
+                element.input_released((position - self.position) / self.scale, state);
             }
         }
     }
@@ -242,28 +282,26 @@ impl<'a, T> Menu<'a, T> {
     }
 
     pub fn input_moved(&mut self, position: Vector, movement: Vector, state: &mut T) {
-        let bounds = self.bounds();
-        if bounds.0.x <= position.x
-            && bounds.0.y <= position.y
-            && bounds.1.x >= position.x
-            && bounds.1.y >= position.y
-        {
+        if self.local_hovers(position) {
             for element in self.elements.iter_mut() {
-                element.input_moved(position, movement, state)
+                element.input_moved(
+                    (position - self.position) / self.scale,
+                    movement / self.scale,
+                    state,
+                )
             }
         }
     }
 
     /// TODO: make a hovered method to avoid repetition?
     pub fn input_start(&mut self, position: Vector, state: &mut T) {
-        let bounds = self.bounds();
-        if bounds.0.x <= position.x
-            && bounds.0.y <= position.y
-            && bounds.1.x >= position.x
-            && bounds.1.y >= position.y
-        {
+        println!("Hey");
+        dbg!(self.local_size());
+        if self.local_hovers(position) {
+            println!("Hi");
             for element in self.elements.iter_mut() {
-                element.input_start(position, state);
+                println!("H");
+                element.input_start((position - self.position) / self.scale, state);
             }
         }
     }
@@ -330,14 +368,15 @@ impl<'a, T> DragButton<'a, T> {
     }
 
     pub fn input_start(&mut self, position: Vector, state: &mut T) {
-        if self.button.is_hovered(position) {
+        println!("Input start");
+        if self.button.local_hovers(position) {
+            println!("Input on draggable");
             self.drag_start = Some(position);
             let callback = self.start_callback;
             callback(position, state);
         }
     }
 
-    /// TODO: completely re-write. This does NOT work
     pub fn input_released(&mut self, position: Vector, state: &mut T) {
         if let Some(start) = self.drag_start {
             let callback = self.released_callback;
