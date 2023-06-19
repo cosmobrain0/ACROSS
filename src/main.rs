@@ -108,7 +108,10 @@ impl MainState {
                 Rc::clone(&menu),
                 |start, state| state.hover_position = Some(start),
                 |start, position, movement, state| state.hover_position = Some(position),
-                |start, position, state| state.hover_position = None,
+                |start, position, state| {
+                    state.hover_position = None;
+                    state.towers.push(spawn_tower(position));
+                },
                 "Drag!",
             )
             .into(),

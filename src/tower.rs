@@ -71,8 +71,8 @@ pub mod tower {
         }
     }
 
-    pub fn spawn_tower<'a>(bounds: Vector) -> Box<dyn Tower<'a> + 'a> {
-        TestTower::spawn(bounds)
+    pub fn spawn_tower<'a>(position: Vector) -> Box<dyn Tower<'a> + 'a> {
+        TestTower::spawn(position)
     }
 
     pub struct TestTower<'t> {
@@ -148,11 +148,8 @@ pub mod tower {
             );
         }
 
-        fn spawn(bounds: Vector) -> Box<dyn Tower<'t> + 't> {
-            Box::new(Self::new(vec2d![
-                random::<f32>() * bounds.x,
-                random::<f32>() * bounds.y
-            ])) as Box<dyn Tower + 't>
+        fn spawn(position: Vector) -> Box<dyn Tower<'t> + 't> {
+            Box::new(Self::new(vec2d![position.x, position.y])) as Box<dyn Tower + 't>
         }
 
         fn time_until_shot(&self) -> f32 {
