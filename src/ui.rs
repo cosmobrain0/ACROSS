@@ -251,6 +251,10 @@ impl<'a, T> Menu<'a, T> {
         self.elements.iter().for_each(|x| x.draw(ctx));
     }
 
+    pub fn local_position(&self) -> Vector {
+        self.local_bounds().0
+    }
+
     pub fn hovers(&self, global_position: Vector) -> bool {
         global_position.x >= self.position().x
             && global_position.x <= self.position().x + self.size().x
@@ -259,10 +263,10 @@ impl<'a, T> Menu<'a, T> {
     }
 
     pub fn local_hovers(&self, position: Vector) -> bool {
-        position.x >= self.position.x
-            && position.y >= self.position.y
-            && position.x <= self.position.x + self.local_size().x
-            && position.y <= self.position.y + self.local_size().y
+        (position.x >= self.local_position().x)
+            && (position.y >= self.local_position().y)
+            && (position.x <= self.local_position().x + self.local_size().x)
+            && (position.y <= self.local_position().y + self.local_size().y)
     }
 
     pub fn input_released(&mut self, position: Vector, state: &mut T) {
@@ -295,12 +299,8 @@ impl<'a, T> Menu<'a, T> {
 
     /// TODO: make a hovered method to avoid repetition?
     pub fn input_start(&mut self, position: Vector, state: &mut T) {
-        println!("Hey");
-        dbg!(self.local_size());
         if self.local_hovers(position) {
-            println!("Hi");
             for element in self.elements.iter_mut() {
-                println!("H");
                 element.input_start((position - self.position) / self.scale, state);
             }
         }
@@ -368,7 +368,6 @@ impl<'a, T> DragButton<'a, T> {
     }
 
     pub fn input_start(&mut self, position: Vector, state: &mut T) {
-        println!("Input start");
         if self.button.local_hovers(position) {
             println!("Input on draggable");
             self.drag_start = Some(position);
