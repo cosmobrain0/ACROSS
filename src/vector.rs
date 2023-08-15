@@ -175,9 +175,9 @@ impl Neg for Vector {
     }
 }
 
-impl Into<[f32; 2]> for Vector {
-    fn into(self) -> [f32; 2] {
-        [self.x, self.y]
+impl From<Vector> for [f32; 2] {
+    fn from(val: Vector) -> Self {
+        [val.x, val.y]
     }
 }
 

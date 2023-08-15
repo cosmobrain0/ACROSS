@@ -10,8 +10,8 @@ mod vector;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-use bullet::bullet::Bullet;
-use enemy::enemy::Enemy;
+use bullet::Bullet;
+use enemy::Enemy;
 use ggez::event;
 use ggez::graphics::{self, get_window_color_format, Color, Rect};
 use ggez::input::mouse;
@@ -19,7 +19,7 @@ use ggez::{Context, GameResult};
 
 use path::Web;
 use renderer::draw_circle;
-use tower::tower::{spawn_tower, TestTower, Tower};
+use tower::{spawn_tower, Tower};
 use ui::{Button, DragButton, Menu};
 use vector::*;
 
@@ -69,6 +69,12 @@ impl<'a> GameState<'a> {
     }
 }
 
+impl<'a> Default for GameState<'a> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 pub struct MainState {
     canvas: graphics::Canvas,
     menu: Rc<RefCell<Menu<'static, GameState<'static>>>>,
@@ -107,8 +113,8 @@ impl MainState {
                 vec2d![75.0, 75.0],
                 Rc::clone(&menu),
                 |start, state| state.hover_position = Some(start),
-                |start, position, movement, state| state.hover_position = Some(position),
-                |start, position, state| {
+                |_start, position, _movement, state| state.hover_position = Some(position),
+                |_start, position, state| {
                     state.hover_position = None;
                     state.towers.push(spawn_tower(position));
                 },
@@ -196,17 +202,14 @@ impl event::EventHandler<ggez::GameError> for MainState {
         _x: f32,
         _y: f32,
     ) {
-        match button {
-            event::MouseButton::Left => {
-                self.menu
-                    .borrow_mut()
-                    .input_start(mouse_position(ctx), &mut self.state);
-            }
-            _ => (),
+        if button == event::MouseButton::Left {
+            self.menu
+                .borrow_mut()
+                .input_start(mouse_position(ctx), &mut self.state);
         }
     }
 
-    fn mouse_motion_event(&mut self, ctx: &mut Context, x: f32, y: f32, dx: f32, dy: f32) {
+    fn mouse_motion_event(&mut self, ctx: &mut Context, _x: f32, _y: f32, dx: f32, dy: f32) {
         self.menu
             .borrow_mut()
             .input_moved(mouse_position(ctx), vec2d![dx, dy], &mut self.state);
@@ -219,13 +222,10 @@ impl event::EventHandler<ggez::GameError> for MainState {
         _x: f32,
         _y: f32,
     ) {
-        match button {
-            event::MouseButton::Left => {
-                self.menu
-                    .borrow_mut()
-                    .input_released(mouse_position(ctx), &mut self.state);
-            }
-            _ => (),
+        if button == event::MouseButton::Left {
+            self.menu
+                .borrow_mut()
+                .input_released(mouse_position(ctx), &mut self.state);
         }
     }
 }

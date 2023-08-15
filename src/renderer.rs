@@ -1,5 +1,5 @@
 use ggez::{
-    graphics::{self, Align, Color, DrawMode, DrawParam, MeshBuilder, Rect, Text, TextFragment},
+    graphics::{self, Color, DrawMode, DrawParam, MeshBuilder, Rect, Text, TextFragment},
     Context,
 };
 
@@ -42,17 +42,11 @@ pub fn draw_text(
     bounds: Option<(Vector, graphics::Align)>,
     colour: Color,
 ) {
-    let size = match size {
-        Some(x) => x,
-        None => 32.0,
-    };
+    let size = size.unwrap_or(32.0);
     let mut text = Text::new(TextFragment::new(text).scale(size));
-    match bounds {
-        Some((b, align)) => {
-            let bounds: [f32; 2] = b.into();
-            text.set_bounds(bounds, align);
-        }
-        None => (),
+    if let Some((b, align)) = bounds {
+        let bounds: [f32; 2] = b.into();
+        text.set_bounds(bounds, align);
     }
     let position: [f32; 2] = position.into();
     graphics::draw(ctx, &text, DrawParam::from((position, colour))).unwrap();
@@ -67,6 +61,7 @@ pub fn draw_line(ctx: &mut Context, a: Vector, b: Vector, thickness: f32, colour
     graphics::draw(ctx, &mesh, DrawParam::from(([0.0, 0.0], Color::WHITE))).unwrap();
 }
 
+#[allow(dead_code)]
 pub fn draw_joined_lines(ctx: &mut Context, points: Vec<Vector>, thickness: f32, colour: Color) {
     let mesh = MeshBuilder::new()
         .line(

@@ -9,7 +9,6 @@ use crate::{
     renderer::{draw_rectangle, draw_text},
     vec2d,
     vector::Vector,
-    MainState,
 };
 
 pub enum UIElement<'a, T> {
@@ -163,9 +162,9 @@ impl<'a, T> Button<'a, T> {
     }
 }
 
-impl<'a, T> Into<UIElement<'a, T>> for Button<'a, T> {
-    fn into(self) -> UIElement<'a, T> {
-        UIElement::Button(self)
+impl<'a, T> From<Button<'a, T>> for UIElement<'a, T> {
+    fn from(val: Button<'a, T>) -> Self {
+        UIElement::Button(val)
     }
 }
 
@@ -255,13 +254,6 @@ impl<'a, T> Menu<'a, T> {
         self.local_bounds().0
     }
 
-    pub fn hovers(&self, global_position: Vector) -> bool {
-        global_position.x >= self.position().x
-            && global_position.x <= self.position().x + self.size().x
-            && global_position.y >= self.position().y
-            && global_position.y <= self.position().y + self.size().y
-    }
-
     pub fn local_hovers(&self, position: Vector) -> bool {
         (position.x >= self.local_position().x)
             && (position.y >= self.local_position().y)
@@ -276,14 +268,6 @@ impl<'a, T> Menu<'a, T> {
         }
     }
 
-    pub fn set_position(&mut self, position: Vector) {
-        self.position = position;
-    }
-
-    pub fn set_scale(&mut self, scale: f32) {
-        self.scale = scale;
-    }
-
     pub fn input_moved(&mut self, position: Vector, movement: Vector, state: &mut T) {
         let local_position = self.position;
         for element in self.elements.iter_mut() {
@@ -295,7 +279,6 @@ impl<'a, T> Menu<'a, T> {
         }
     }
 
-    /// TODO: make a hovered method to avoid repetition?
     pub fn input_start(&mut self, position: Vector, state: &mut T) {
         if self.local_hovers(position) {
             let local_position = self.position;
@@ -306,9 +289,9 @@ impl<'a, T> Menu<'a, T> {
     }
 }
 
-impl<'a, T> Into<UIElement<'a, T>> for Menu<'a, T> {
-    fn into(self) -> UIElement<'a, T> {
-        UIElement::Menu(self)
+impl<'a, T> From<Menu<'a, T>> for UIElement<'a, T> {
+    fn from(val: Menu<'a, T>) -> Self {
+        UIElement::Menu(val)
     }
 }
 
@@ -390,8 +373,8 @@ impl<'a, T> DragButton<'a, T> {
         }
     }
 }
-impl<'a, T> Into<UIElement<'a, T>> for DragButton<'a, T> {
-    fn into(self) -> UIElement<'a, T> {
-        UIElement::DragButton(self)
+impl<'a, T> From<DragButton<'a, T>> for UIElement<'a, T> {
+    fn from(val: DragButton<'a, T>) -> Self {
+        UIElement::DragButton(val)
     }
 }
