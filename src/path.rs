@@ -3,6 +3,7 @@ use std::{cell::RefCell, rc::Rc};
 use ggez::{graphics::Color, Context};
 
 use crate::{
+    pathfind::{Connection, NodeIndex, Pathfinder},
     renderer::{draw_circle, draw_line},
     vector::Vector,
 };
@@ -15,7 +16,11 @@ pub struct RouteCreationError {
 
 #[derive(Debug)]
 pub enum WebCreationError {
+    /// Invalid connections were supplied, or there is no route from the start
+    /// to the end
     InvalidRoute,
+    /// The start index or the end index is invalid.
+    InvalidEndpoints,
 }
 
 #[derive(Debug, Clone)]
@@ -51,6 +56,18 @@ impl Route {
         }
     }
 
+    /// Panics if there are less than 2 points
+    pub fn from_positions_unchecked(positions: Vec<Vector>) -> Self {
+        Self {
+            length: positions
+                .iter()
+                .enumerate()
+                .skip(1)
+                .fold(0.0, |acc, (i, &x)| acc + (x - positions[i - 1]).length()),
+            points: positions,
+        }
+    }
+
     pub fn get_position(&self, progress: f32) -> Option<Vector> {
         if !(0.0..1.0).contains(&progress) {
             None
@@ -77,36 +94,49 @@ impl Route {
 #[derive(Debug)]
 pub struct Web {
     points: Vec<Rc<RefCell<Point>>>,
-    route: Route,
+    pathfinder: Pathfinder,
+    start: NodeIndex,
+    end: NodeIndex,
 }
 impl Web {
     pub fn new(
         positions: Vec<Vector>,
         connections: Vec<(usize, usize)>,
-        route_indexes: Vec<usize>,
+        start: usize,
+        end: usize,
     ) -> Result<Self, WebCreationError> {
-        if route_indexes.iter().any(|&x| x >= positions.len())
-            || connections
-                .iter()
-                .any(|&(a, b)| a >= positions.len() || b >= positions.len())
-        {
-            Err(WebCreationError::InvalidRoute)
-        } else {
-            let points: Vec<Rc<RefCell<Point>>> = positions
-                .iter()
-                .map(|&x| Rc::new(RefCell::new(Point::new(x))))
-                .collect();
-            for &(a, b) in connections.iter() {
-                points[a]
-                    .borrow_mut()
-                    .add_connections(&vec![Rc::clone(&points[b])])
+        let points: Vec<Rc<RefCell<Point>>> = positions
+            .iter()
+            .map(|&x| Rc::new(RefCell::new(Point::new(x))))
+            .collect();
+        for &(a, b) in connections.iter() {
+            points[a]
+                .borrow_mut()
+                .add_connections(&vec![Rc::clone(&points[b])])
+        }
+
+        let pathfinder = Pathfinder::new(
+            &positions,
+            connections.iter().cloned().map(Into::into).collect(),
+        );
+
+        if start >= positions.len() || end >= positions.len() {
+            return Err(WebCreationError::InvalidEndpoints);
+        }
+        let start = NodeIndex(start);
+        let end = NodeIndex(end);
+
+        match pathfinder {
+            Some(mut x) => {
+                x.pathfind(start, end);
+                Ok(Self {
+                    points,
+                    pathfinder: x,
+                    start,
+                    end,
+                })
             }
-            let route: Vec<_> = route_indexes.iter().map(|&x| points[x].clone()).collect();
-            let route = Route::new(&route);
-            match route {
-                Ok(x) => Ok(Self { points, route: x }),
-                Err(_) => Err(WebCreationError::InvalidRoute),
-            }
+            None => Err(WebCreationError::InvalidRoute),
         }
     }
 
@@ -122,19 +152,18 @@ impl Web {
                 )
             });
         });
-        self.route
-            .points
-            .iter()
+        let path = self.route();
+        path.iter()
             .skip(1)
             .enumerate()
-            .for_each(|(i, &x)| draw_line(ctx, self.route.points[i], x, 3.5, Color::WHITE));
+            .for_each(|(i, &x)| draw_line(ctx, path[i], x, 3.5, Color::WHITE));
         self.points
             .iter()
             .for_each(|x| draw_circle(ctx, x.borrow().position, 20.0, Color::WHITE));
     }
 
-    pub fn route(&self) -> &Route {
-        &self.route
+    pub fn route(&self) -> Vec<Vector> {
+        self.pathfinder.best_route().unwrap()
     }
 }
 

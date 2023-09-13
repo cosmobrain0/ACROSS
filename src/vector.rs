@@ -10,7 +10,7 @@ macro_rules! vec2d {
 }
 
 /// Represents a point in 2D space, using 2 f32's for the x and y
-#[derive(Debug, Clone, Default, Copy)]
+#[derive(Debug, Clone, Default, Copy, PartialEq)]
 pub struct Vector {
     pub x: f32,
     pub y: f32,

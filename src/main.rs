@@ -1,7 +1,7 @@
-mod path;
-// mod pathfind; // This is for prototype 2
 mod bullet;
 mod enemy;
+mod path;
+mod pathfind;
 mod renderer;
 mod tower;
 mod ui;
@@ -17,7 +17,7 @@ use ggez::graphics::{self, get_window_color_format, Color, Rect};
 use ggez::input::mouse;
 use ggez::{Context, GameResult};
 
-use path::Web;
+use path::{Route, Web};
 use renderer::draw_circle;
 use tower::{spawn_tower, Tower};
 use ui::{Button, DragButton, Menu};
@@ -53,14 +53,32 @@ impl<'a> GameState<'a> {
                 vec2d![700.0, 100.0],
                 vec2d![350.0, 200.0],
                 vec2d![1000.0, 1000.0],
+                vec2d![370.0, 800.0],
             ],
-            vec![(0, 1), (1, 3), (0, 2), (1, 2), (2, 3)],
-            vec![0, 1, 3],
+            vec![
+                // (0, 1),
+                (1, 3),
+                (0, 2),
+                (1, 2),
+                // (2, 3),
+                (0, 4),
+                (1, 4),
+                (4, 2),
+                (4, 3),
+            ]
+            .into_iter()
+            .map(|(a, b)| [(a, b), (b, a)])
+            .flatten()
+            .collect(),
+            0,
+            1,
         )
         .expect("Failed to build a path");
 
         Self {
-            enemies: RefCell::new(vec![Enemy::new_random(path.route().clone())]),
+            enemies: RefCell::new(vec![Enemy::new_random(Route::from_positions_unchecked(
+                path.route(),
+            ))]),
             bullets: RefCell::new(Vec::new()),
             path,
             towers: Vec::new(),
