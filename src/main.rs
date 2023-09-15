@@ -37,12 +37,18 @@ pub enum Updated<AliveType, DeadType> {
     Dead(DeadType),
 }
 
+pub enum GameMode {
+    MainMenu,
+    Play,
+}
+
 pub struct GameState<'a> {
     path: Web,
     enemies: RefCell<Vec<Enemy<'a, Alive>>>,
     bullets: RefCell<Vec<Bullet<'a, Alive>>>,
     towers: Vec<Box<dyn Tower<'a> + 'a>>,
     hover_position: Option<Vector>,
+    mode: GameMode,
 }
 
 impl<'a> GameState<'a> {
@@ -83,6 +89,7 @@ impl<'a> GameState<'a> {
             path,
             towers: Vec::new(),
             hover_position: None,
+            mode: GameMode::MainMenu,
         }
     }
 }
@@ -96,6 +103,7 @@ impl<'a> Default for GameState<'a> {
 pub struct MainState {
     canvas: graphics::Canvas,
     menu: Rc<RefCell<Menu<'static, GameState<'static>>>>,
+    main_menu: Rc<RefCell<Menu<'static, GameState<'static>>>>,
     state: GameState<'static>,
 }
 
@@ -141,6 +149,36 @@ impl MainState {
             .into(),
         ];
         menu.borrow_mut().add_elements(buttons);
+
+        let main_menu = Rc::new(RefCell::new(Menu::new(
+            vec2d!(SCREEN_WIDTH as f32 / 2.0, SCREEN_HEIGHT as f32 / 2.0),
+            1.0,
+            None,
+        )));
+        let buttons = vec![
+            Button::new(
+                vec2d![-100.0, -100.0],
+                vec2d![200.0, 100.0],
+                Rc::clone(&main_menu),
+                |state: &mut GameState| {
+                    state.mode = GameMode::Play;
+                    // FIXME: This needs to restart the game or something maybe?
+                },
+                "Play",
+            ),
+            Button::new(
+                vec2d![-100.0, 50.0],
+                vec2d![200.0, 100.0],
+                Rc::clone(&main_menu),
+                |state| {
+                    println!("Something!");
+                },
+                "Something",
+            ),
+        ];
+        menu.borrow_mut()
+            .add_elements(buttons.into_iter().map(Into::into).collect());
+
         graphics::set_drawable_size(ctx, 1920.0 / 2.0, 1080.0 / 2.0).unwrap();
 
         let s = MainState {
@@ -153,6 +191,7 @@ impl MainState {
             )
             .unwrap(),
             menu,
+            main_menu,
             state: GameState::new(),
         };
         Ok(s)
@@ -162,19 +201,25 @@ impl MainState {
 impl event::EventHandler<ggez::GameError> for MainState {
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
         let size = graphics::drawable_size(_ctx);
-        let enemies = Enemy::update_all(self.state.enemies.replace(Vec::new()));
-        self.state.enemies.replace(enemies);
-        let (bullets, mut enemies) = Bullet::update_all(
-            self.state.bullets.replace(Vec::new()),
-            self.state.enemies.replace(Vec::new()),
-            vec2d![size.0, size.1],
-        );
-        for tower in self.state.towers.iter_mut() {
-            enemies = tower.update(enemies, vec2d! {SCREEN_WIDTH as f32, SCREEN_HEIGHT as f32});
+        match self.state.mode {
+            GameMode::MainMenu => Ok(()),
+            GameMode::Play => {
+                let enemies = Enemy::update_all(self.state.enemies.replace(Vec::new()));
+                self.state.enemies.replace(enemies);
+                let (bullets, mut enemies) = Bullet::update_all(
+                    self.state.bullets.replace(Vec::new()),
+                    self.state.enemies.replace(Vec::new()),
+                    vec2d![size.0, size.1],
+                );
+                for tower in self.state.towers.iter_mut() {
+                    enemies =
+                        tower.update(enemies, vec2d! {SCREEN_WIDTH as f32, SCREEN_HEIGHT as f32});
+                }
+                self.state.bullets.replace(bullets);
+                self.state.enemies.replace(enemies);
+                Ok(())
+            }
         }
-        self.state.bullets.replace(bullets);
-        self.state.enemies.replace(enemies);
-        Ok(())
     }
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
@@ -186,19 +231,26 @@ impl event::EventHandler<ggez::GameError> for MainState {
         .unwrap();
         graphics::clear(ctx, graphics::Color::from((0, 0, 0, 255)));
 
-        self.state.path.draw(ctx);
-        for enemy in self.state.enemies.borrow().iter() {
-            enemy.draw(ctx);
-        }
-        for bullet in self.state.bullets.borrow().iter() {
-            bullet.draw(ctx);
-        }
-        for tower in &self.state.towers {
-            tower.draw(ctx);
-        }
-        self.menu.borrow().draw(ctx);
-        if let Some(position) = self.state.hover_position {
-            draw_circle(ctx, position, 10.0, Color::WHITE);
+        match self.state.mode {
+            GameMode::MainMenu => {
+                self.main_menu.borrow().draw(ctx);
+            }
+            GameMode::Play => {
+                self.state.path.draw(ctx);
+                for enemy in self.state.enemies.borrow().iter() {
+                    enemy.draw(ctx);
+                }
+                for bullet in self.state.bullets.borrow().iter() {
+                    bullet.draw(ctx);
+                }
+                for tower in &self.state.towers {
+                    tower.draw(ctx);
+                }
+                if let Some(position) = self.state.hover_position {
+                    draw_circle(ctx, position, 10.0, Color::WHITE);
+                }
+                self.menu.borrow().draw(ctx);
+            }
         }
 
         graphics::set_canvas(ctx, None);
@@ -221,16 +273,36 @@ impl event::EventHandler<ggez::GameError> for MainState {
         _y: f32,
     ) {
         if button == event::MouseButton::Left {
-            self.menu
-                .borrow_mut()
-                .input_start(mouse_position(ctx), &mut self.state);
+            match self.state.mode {
+                GameMode::MainMenu => {
+                    vec![&mut self.main_menu]
+                }
+                GameMode::Play => {
+                    vec![&mut self.menu] // maybe I cna do this with a slice?
+                }
+            }
+            .into_iter()
+            .for_each(|x| {
+                x.borrow_mut()
+                    .input_start(mouse_position(ctx), &mut self.state)
+            });
         }
     }
 
     fn mouse_motion_event(&mut self, ctx: &mut Context, _x: f32, _y: f32, dx: f32, dy: f32) {
-        self.menu
-            .borrow_mut()
-            .input_moved(mouse_position(ctx), vec2d![dx, dy], &mut self.state);
+        match self.state.mode {
+            GameMode::MainMenu => {
+                vec![&mut self.main_menu]
+            }
+            GameMode::Play => {
+                vec![&mut self.menu] // maybe I cna do this with a slice?
+            }
+        }
+        .into_iter()
+        .for_each(|x| {
+            x.borrow_mut()
+                .input_moved(mouse_position(ctx), vec2d![dx, dy], &mut self.state);
+        });
     }
 
     fn mouse_button_up_event(
@@ -241,9 +313,19 @@ impl event::EventHandler<ggez::GameError> for MainState {
         _y: f32,
     ) {
         if button == event::MouseButton::Left {
-            self.menu
-                .borrow_mut()
-                .input_released(mouse_position(ctx), &mut self.state);
+            match self.state.mode {
+                GameMode::MainMenu => {
+                    vec![&mut self.main_menu]
+                }
+                GameMode::Play => {
+                    vec![&mut self.menu] // maybe I cna do this with a slice?
+                }
+            }
+            .into_iter()
+            .for_each(|x| {
+                x.borrow_mut()
+                    .input_released(mouse_position(ctx), &mut self.state);
+            });
         }
     }
 }
