@@ -192,6 +192,7 @@ impl<'a, T> Menu<'a, T> {
         for element in elements {
             self.elements.push(element);
         }
+        println!("I have {} elements", self.elements.len());
     }
 
     pub fn position(&self) -> Vector {

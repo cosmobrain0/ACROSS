@@ -176,11 +176,12 @@ impl MainState {
                 "Something",
             ),
         ];
+        println!("{} buttons", buttons.len());
         menu.borrow_mut()
             .add_elements(buttons.into_iter().map(Into::into).collect());
         println!(
             "Starting with {} elements",
-            main_menu.borrow().elements.len()
+            main_menu.borrow().elements.len(),
         );
 
         graphics::set_drawable_size(ctx, 1920.0 / 2.0, 1080.0 / 2.0).unwrap();
