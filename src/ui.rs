@@ -192,7 +192,6 @@ impl<'a, T> Menu<'a, T> {
         for element in elements {
             self.elements.push(element);
         }
-        println!("I have {} elements", self.elements.len());
     }
 
     pub fn position(&self) -> Vector {
@@ -241,13 +240,6 @@ impl<'a, T> Menu<'a, T> {
     }
 
     pub fn draw(&self, ctx: &mut Context) {
-        let bounds = self.bounds();
-        draw_rectangle(
-            ctx,
-            bounds.0,
-            bounds.1 - bounds.0,
-            Color::new(1.0, 0.0, 0.0, 0.3),
-        );
         self.elements.iter().for_each(|x| x.draw(ctx));
     }
 
