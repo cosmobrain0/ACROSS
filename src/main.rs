@@ -178,7 +178,10 @@ impl MainState {
         ];
         menu.borrow_mut()
             .add_elements(buttons.into_iter().map(Into::into).collect());
-        println!("Starting with {} elements", menu.borrow().elements.len());
+        println!(
+            "Starting with {} elements",
+            main_menu.borrow().elements.len()
+        );
 
         graphics::set_drawable_size(ctx, 1920.0 / 2.0, 1080.0 / 2.0).unwrap();
 
@@ -201,6 +204,10 @@ impl MainState {
 
 impl event::EventHandler<ggez::GameError> for MainState {
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
+        println!(
+            "Updating with {} elements",
+            self.main_menu.borrow().elements.len()
+        );
         let size = graphics::drawable_size(_ctx);
         match self.state.mode {
             GameMode::MainMenu => Ok(()),
@@ -274,6 +281,7 @@ impl event::EventHandler<ggez::GameError> for MainState {
         _x: f32,
         _y: f32,
     ) {
+        println!("Mouse button down");
         if button == event::MouseButton::Left {
             match self.state.mode {
                 GameMode::MainMenu => {
@@ -292,6 +300,7 @@ impl event::EventHandler<ggez::GameError> for MainState {
     }
 
     fn mouse_motion_event(&mut self, ctx: &mut Context, _x: f32, _y: f32, dx: f32, dy: f32) {
+        println!("Mouse moved");
         match self.state.mode {
             GameMode::MainMenu => {
                 vec![&mut self.main_menu]
@@ -314,6 +323,7 @@ impl event::EventHandler<ggez::GameError> for MainState {
         _x: f32,
         _y: f32,
     ) {
+        println!("Mouse button up");
         if button == event::MouseButton::Left {
             match self.state.mode {
                 GameMode::MainMenu => {
