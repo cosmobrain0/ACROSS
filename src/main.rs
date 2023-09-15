@@ -178,6 +178,7 @@ impl MainState {
         ];
         menu.borrow_mut()
             .add_elements(buttons.into_iter().map(Into::into).collect());
+        println!("Starting with {} elements", menu.borrow().elements.len());
 
         graphics::set_drawable_size(ctx, 1920.0 / 2.0, 1080.0 / 2.0).unwrap();
 
@@ -233,6 +234,7 @@ impl event::EventHandler<ggez::GameError> for MainState {
 
         match self.state.mode {
             GameMode::MainMenu => {
+                println!("{}", self.main_menu.borrow().elements.len());
                 self.main_menu.borrow().draw(ctx);
             }
             GameMode::Play => {
