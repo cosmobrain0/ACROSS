@@ -3,7 +3,7 @@ use ggez::{
     Context,
 };
 
-use crate::vector::Vector;
+use crate::{vec2d, vector::Vector};
 
 /// Draw a rectangle, given its top-left corner and its width and height.
 pub fn draw_rectangle(ctx: &mut Context, position: Vector, size: Vector, colour: Color) {
@@ -31,6 +31,37 @@ pub fn draw_circle(ctx: &mut Context, position: Vector, radius: f32, colour: Col
     graphics::draw(ctx, &mesh, (position, colour)).unwrap();
 }
 
+pub fn draw_sector(
+    ctx: &mut Context,
+    position: Vector,
+    radius: f32,
+    start_angle: f32,
+    end_angle: f32,
+    triangle_count: usize,
+    colour: Color,
+) {
+    // TODO: I have to make my own arc???
+    let step_size = (end_angle - start_angle) / triangle_count as f32;
+    let triangles: Vec<_> = (0..triangle_count)
+        .map(|i| i as f32 * (end_angle - start_angle))
+        .map(|theta| theta + start_angle)
+        .map(|theta| {
+            [
+                vec2d![0.0, 0.0],
+                Vector::from_polar(theta, radius),
+                Vector::from_polar(theta + step_size, radius),
+            ]
+        })
+        .flatten()
+        .collect();
+    let mesh = MeshBuilder::new()
+        .triangles(triangles.as_slice(), Color::WHITE)
+        .unwrap()
+        .build(ctx)
+        .unwrap();
+    let position: [f32; 2] = position.into();
+    graphics::draw(ctx, &mesh, (position, colour)).unwrap();
+}
 /// Draw text, given its top-left corner's position, the font size and the bounds.
 /// The default size is 32px
 /// The default bounds are infinity (no bounds).

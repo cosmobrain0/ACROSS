@@ -5,7 +5,7 @@ use ggez::{graphics::Color, Context};
 use crate::{
     bullet::{Bullet, BulletTrait, Projectile},
     enemy::Enemy,
-    renderer::draw_circle,
+    renderer::{draw_circle, draw_sector},
     vec2d,
     vector::Vector,
     Alive,
@@ -57,6 +57,40 @@ impl Range for CircularRange {
         enemies
             .iter()
             .find(|&enemy| enemy.collides(self.position, self.radius))
+    }
+}
+
+pub struct SectorRange {
+    position: Vector,
+    radius: f32,
+    /// The direction in which this sector faces
+    direction: f32,
+    /// The field of view (an angle) of this range
+    fov: f32,
+}
+impl Range for SectorRange {
+    fn draw(&self, ctx: &mut Context) {
+        draw_sector(
+            ctx,
+            self.position,
+            self.radius,
+            self.direction - self.fov / 2.0,
+            self.direction + self.fov / 2.0,
+            200,
+            Color::from_rgba(255, 255, 255, 100),
+        );
+    }
+
+    fn get_target<'a, 'b>(&self, enemies: &'b [Enemy<'a, Alive>]) -> Option<&'b Enemy<'a, Alive>>
+    where
+        'a: 'b,
+    {
+        for enemy in enemies {
+            if enemy.collides(self.position, self.radius) && todo!("Figure out angle stuffs") {
+                return Some(enemy);
+            }
+        }
+        None
     }
 }
 

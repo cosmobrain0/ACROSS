@@ -198,3 +198,12 @@ impl From<Point2<f32>> for Vector {
         }
     }
 }
+
+impl Into<Point2<f32>> for Vector {
+    fn into(self) -> Point2<f32> {
+        Point2 {
+            x: self.x,
+            y: self.y,
+        }
+    }
+}
