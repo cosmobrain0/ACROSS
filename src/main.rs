@@ -8,6 +8,7 @@ mod ui;
 mod vector;
 
 use std::cell::RefCell;
+use std::f32::consts::PI;
 use std::rc::Rc;
 
 use bullet::Bullet;
@@ -18,7 +19,7 @@ use ggez::input::mouse;
 use ggez::{Context, GameResult};
 
 use path::{Route, Web};
-use renderer::draw_circle;
+use renderer::{draw_circle, draw_sector};
 use tower::{spawn_tower, Tower};
 use ui::{Button, DragButton, Menu};
 use vector::*;
@@ -242,6 +243,15 @@ impl event::EventHandler<ggez::GameError> for MainState {
         .unwrap();
         graphics::clear(ctx, graphics::Color::from((0, 0, 0, 255)));
 
+        draw_sector(
+            ctx,
+            vec2d![SCREEN_WIDTH as f32 / 2.0, SCREEN_HEIGHT as f32 / 2.0],
+            50.0,
+            -PI / 4.0,
+            PI / 4.0,
+            200,
+            Color::GREEN,
+        );
         match self.state.mode {
             GameMode::MainMenu => {
                 self.main_menu.borrow().draw(ctx);
