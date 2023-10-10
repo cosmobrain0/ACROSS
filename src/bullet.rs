@@ -25,7 +25,7 @@ pub mod bullet {
         fn draw(&self, ctx: &mut Context);
     }
 
-    /// A lot of this is copied from enemy.js. Is there a way to reduce repetition?
+    /// A lot of this is copied from enemy.rs. Is there a way to reduce repetition?
     #[derive(Debug)]
     pub struct Bullet<'a, State> {
         bullet: Box<dyn BulletTrait<'a> + 'a>,
@@ -144,7 +144,6 @@ pub mod bullet {
                 || self.position.x - self.radius > bounds.x
                 || self.position.y - self.radius > bounds.y
             {
-                println!("Deleting bullet!");
                 (false, new_enemies)
             } else {
                 (true, new_enemies)
@@ -152,7 +151,6 @@ pub mod bullet {
         }
 
         fn draw(&self, ctx: &mut Context) {
-            // dbg!(&self.position);
             draw_circle(
                 ctx,
                 self.position,

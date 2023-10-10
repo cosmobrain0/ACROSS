@@ -7,7 +7,7 @@ pub mod tower {
     use crate::{
         bullet::bullet::{Bullet, BulletTrait, Projectile},
         enemy::enemy::Enemy,
-        renderer::draw_circle,
+        renderer::{draw_circle, draw_sector},
         vec2d,
         vector::Vector,
         Alive, Updated,
@@ -71,8 +71,45 @@ pub mod tower {
         }
     }
 
-    pub fn spawn_tower<'a>(bounds: Vector) -> Box<dyn Tower<'a> + 'a> {
-        TestTower::spawn(bounds)
+    pub struct SectorRange {
+        position: Vector,
+        radius: f32,
+        /// The direction in which this sector faces
+        direction: f32,
+        /// The field of view (an angle) of this range
+        fov: f32,
+    }
+    impl Range for SectorRange {
+        fn draw(&self, ctx: &mut Context) {
+            draw_sector(
+                ctx,
+                self.position,
+                self.radius,
+                self.direction - self.fov / 2.0,
+                self.direction + self.fov / 2.0,
+                200,
+                Color::from_rgba(255, 255, 255, 100),
+            );
+        }
+
+        fn get_target<'a, 'b>(
+            &self,
+            enemies: &'b Vec<Enemy<'a, Alive>>,
+        ) -> Option<&'b Enemy<'a, Alive>>
+        where
+            'a: 'b,
+        {
+            for enemy in enemies {
+                if enemy.collides(self.position, self.radius) && todo!("Figure out angle stuffs") {
+                    return Some(enemy);
+                }
+            }
+            None
+        }
+    }
+
+    pub fn spawn_tower<'a>(position: Vector) -> Box<dyn Tower<'a> + 'a> {
+        TestTower::spawn(position)
     }
 
     pub struct TestTower<'t> {
@@ -148,11 +185,8 @@ pub mod tower {
             );
         }
 
-        fn spawn(bounds: Vector) -> Box<dyn Tower<'t> + 't> {
-            Box::new(Self::new(vec2d![
-                random::<f32>() * bounds.x,
-                random::<f32>() * bounds.y
-            ])) as Box<dyn Tower + 't>
+        fn spawn(position: Vector) -> Box<dyn Tower<'t> + 't> {
+            Box::new(Self::new(vec2d![position.x, position.y])) as Box<dyn Tower + 't>
         }
 
         fn time_until_shot(&self) -> f32 {
