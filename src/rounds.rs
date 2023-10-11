@@ -55,8 +55,9 @@ impl<'a> Round<'a> {
             self.time_to_next_shot = Self::time_between_enemies(self.round_number);
         }
 
+        let initial_enemies = self.enemies.borrow().len();
         let enemies = Enemy::update_all(self.enemies.replace(Vec::new()));
-        let lives_lost = self.enemies.borrow().len() - enemies.len();
+        let lives_lost = initial_enemies - enemies.len();
         self.enemies.replace(enemies);
         let (bullets, mut enemies) = Bullet::update_all(
             self.bullets.replace(Vec::new()),

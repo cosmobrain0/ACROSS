@@ -21,7 +21,7 @@ use ggez::input::mouse;
 use ggez::{Context, GameResult};
 
 use path::{Route, Web};
-use renderer::{draw_circle, draw_sector};
+use renderer::{draw_circle, draw_sector, draw_text};
 use tower::{spawn_tower, Tower};
 use ui::{Button, DragButton, Menu};
 use vector::*;
@@ -217,10 +217,11 @@ impl event::EventHandler<ggez::GameError> for MainState {
         match self.state.mode {
             GameMode::MainMenu => Ok(()),
             GameMode::Play => {
-                self.state.lives -=
-                    self.state
-                        .round
-                        .update(&self.state.path, &mut self.state.towers, size);
+                self.state.lives = self.state.lives.saturating_sub(self.state.round.update(
+                    &self.state.path,
+                    &mut self.state.towers,
+                    size,
+                ));
                 if self.state.round.complete() {
                     self.state.round.next();
                 }
@@ -257,6 +258,14 @@ impl event::EventHandler<ggez::GameError> for MainState {
                     draw_circle(ctx, position, 10.0, Color::WHITE);
                 }
                 self.menu.borrow().draw(ctx);
+                draw_text(
+                    ctx,
+                    format!("Lives: {lives}", lives = self.state.lives).as_str(),
+                    vec2d![200.0, 50.0],
+                    None,
+                    None,
+                    Color::WHITE,
+                );
             }
         }
 
