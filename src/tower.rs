@@ -113,7 +113,7 @@ fn shortest_angle_distance(theta1: f32, theta2: f32) -> f32 {
 }
 
 pub fn spawn_tower<'a>(position: Vector) -> Box<dyn Tower<'a> + 'a> {
-    TestTower::spawn(position)
+    SectorTower::spawn(position)
 }
 
 pub struct TestTower<'t> {
@@ -245,13 +245,35 @@ impl<'t> Tower<'t> for SectorTower<'t> {
         enemies: Vec<Enemy<'a, Alive>>,
         bounds: Vector,
     ) -> Vec<Enemy<'a, Alive>> {
-        // TODO: think about this
-        todo!("Updating SectorTower")
+        // TODO: lots of repetition here.
+        // can that be cut down?
+        if self.time_to_next_shot == 0 {
+            // shoot!
+            if let Some(enemy) = self.range.get_target(&enemies) {
+                self.bullets
+                    .borrow_mut()
+                    .push(Bullet::new(Projectile::spawn(self, enemy.position())));
+                self.time_to_next_shot = Self::cooldown();
+            }
+        } else {
+            self.time_to_next_shot -= 1
+        }
+        let bullets = Vec::with_capacity(self.bullets.borrow().len());
+        let bullets = self.bullets.replace(bullets);
+        let (new_bullets, new_enemies) = Bullet::update_all(bullets, enemies, bounds);
+        self.bullets.replace(new_bullets);
+        new_enemies
     }
 
     fn draw(&self, ctx: &mut Context) {
-        // TODO: think about this
-        todo!("Drawing SectorTower")
+        self.range.draw(ctx);
+        self.bullets.borrow().iter().for_each(|x| x.draw(ctx));
+        draw_circle(
+            ctx,
+            self.position(),
+            self.radius(),
+            Color::from_rgb(255, 255, 255),
+        );
     }
 
     fn position(&self) -> Vector {

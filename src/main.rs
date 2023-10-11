@@ -243,15 +243,6 @@ impl event::EventHandler<ggez::GameError> for MainState {
         .unwrap();
         graphics::clear(ctx, graphics::Color::from((0, 0, 0, 255)));
 
-        draw_sector(
-            ctx,
-            vec2d![SCREEN_WIDTH as f32 / 2.0, SCREEN_HEIGHT as f32 / 2.0],
-            50.0,
-            -PI / 4.0,
-            PI / 4.0,
-            200,
-            Color::GREEN,
-        );
         match self.state.mode {
             GameMode::MainMenu => {
                 self.main_menu.borrow().draw(ctx);
