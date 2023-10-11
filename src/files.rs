@@ -30,7 +30,10 @@ pub fn save_to_file(path: PathBuf, save_data: SaveData) -> Result<(), Box<dyn Er
         fs::write(&path, format!("date,score\n{date},{score}"))
             .expect("Failed to overwrite to file");
     } else {
-        let mut file = fs::File::open(&path).expect("Failed to open the file!");
+        let mut file = std::fs::OpenOptions::new()
+            .append(true)
+            .open(&path)
+            .expect("Failed to open the file!");
         write!(file, "\n{date},{score}").expect("Failed to append to file!");
     }
 
