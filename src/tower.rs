@@ -102,19 +102,17 @@ impl Range for SectorRange {
 
 /// Returns the signed shortest angle between two angles
 pub fn shortest_angle_distance(theta1: f32, theta2: f32) -> f32 {
-    let mut distance = (theta2 - theta1) % (2.0 * PI);
-    distance = if distance < 0.0 {
-        2.0 * PI - distance
+    let distance = if theta2 > theta1 {
+        (theta2 - theta1) % (2.0 * PI)
+    } else {
+        (theta1 - theta2) % (2.0 * PI)
+    };
+    log!("distance is {}", distance);
+    if distance.abs() > PI {
+        (2.0 * PI - distance.abs()) * -distance.signum()
     } else {
         distance
-    };
-    let (sign, shortest_distance) = if distance > PI {
-        (theta2 < theta1, distance - PI)
-    } else {
-        (theta2 > theta1, distance)
-    };
-    let sign = if sign { 1.0 } else { -1.0 };
-    shortest_distance * sign
+    }
 }
 
 pub fn spawn_tower<'a>(position: Vector) -> Box<dyn Tower<'a> + 'a> {
