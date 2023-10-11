@@ -1,5 +1,6 @@
 mod bullet;
 mod enemy;
+mod files;
 mod path;
 mod pathfind;
 mod renderer;
@@ -8,9 +9,11 @@ mod tower;
 mod ui;
 mod vector;
 
+use files::{save_to_file, SaveData};
 use rounds::Round;
 use std::cell::RefCell;
 use std::f32::consts::PI;
+use std::path::PathBuf;
 use std::rc::Rc;
 
 use bullet::Bullet;
@@ -229,6 +232,12 @@ impl event::EventHandler<ggez::GameError> for MainState {
                 if self.state.lives == 0 {
                     // TODO: save score to file
                     // self.state.mode == GameMode::MainMenu;
+                    // TODO: some error handling?
+                    save_to_file(
+                        "./save-file.csv".into(),
+                        SaveData::new(chrono::Utc::now(), self.state.score),
+                    )
+                    .unwrap();
                     self.state = GameState::new();
                     return Ok(());
                 }
