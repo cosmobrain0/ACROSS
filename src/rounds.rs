@@ -41,7 +41,7 @@ impl<'a> Round<'a> {
         path: &Web,
         towers: &mut Vec<Box<dyn Tower>>,
         size: (f32, f32),
-    ) -> usize {
+    ) -> (usize, usize) {
         self.time_to_next_shot = self.time_to_next_shot.saturating_sub(1);
         if self.time_to_next_shot == 0 {
             if self.enemies_left > 0 {
@@ -57,19 +57,26 @@ impl<'a> Round<'a> {
 
         let initial_enemies = self.enemies.borrow().len();
         let enemies = Enemy::update_all(self.enemies.replace(Vec::new()));
-        let lives_lost = initial_enemies - enemies.len();
+        let enemies_after_movement = enemies.len();
         self.enemies.replace(enemies);
+
+        // does this do nothing?
         let (bullets, mut enemies) = Bullet::update_all(
             self.bullets.replace(Vec::new()),
             self.enemies.replace(Vec::new()),
             vec2d![size.0, size.1],
         );
+
         for tower in towers.iter_mut() {
             enemies = tower.update(enemies, vec2d![SCREEN_WIDTH as f32, SCREEN_HEIGHT as f32]);
         }
+        let enemies_after_shooting = enemies.len();
         self.bullets.replace(bullets);
         self.enemies.replace(enemies);
-        lives_lost
+
+        let lives_lost = initial_enemies - enemies_after_movement;
+        let enemies_killed = enemies_after_movement - enemies_after_shooting;
+        (lives_lost, enemies_killed)
     }
 
     pub fn enemies<'b>(&'b self) -> core::cell::Ref<'b, Vec<Enemy<'a, Alive>>> {

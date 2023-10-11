@@ -53,6 +53,7 @@ pub struct GameState<'a> {
     mode: GameMode,
     round: Round<'a>,
     lives: usize,
+    score: usize,
 }
 
 impl<'a> GameState<'a> {
@@ -92,6 +93,7 @@ impl<'a> GameState<'a> {
             mode: GameMode::MainMenu,
             round: Round::new(1),
             lives: STARTING_LIVES,
+            score: 0,
         }
     }
 }
@@ -217,16 +219,18 @@ impl event::EventHandler<ggez::GameError> for MainState {
         match self.state.mode {
             GameMode::MainMenu => Ok(()),
             GameMode::Play => {
-                self.state.lives = self.state.lives.saturating_sub(self.state.round.update(
-                    &self.state.path,
-                    &mut self.state.towers,
-                    size,
-                ));
+                let (lives_lost, enemies_killed) =
+                    self.state
+                        .round
+                        .update(&self.state.path, &mut self.state.towers, size);
+                self.state.lives = self.state.lives.saturating_sub(lives_lost);
+                self.state.score = self.state.score.saturating_add(enemies_killed);
 
                 if self.state.lives == 0 {
                     // TODO: save score to file
                     // self.state.mode == GameMode::MainMenu;
                     self.state = GameState::new();
+                    return Ok(());
                 }
 
                 if self.state.round.complete() {
@@ -267,7 +271,12 @@ impl event::EventHandler<ggez::GameError> for MainState {
                 self.menu.borrow().draw(ctx);
                 draw_text(
                     ctx,
-                    format!("Lives: {lives}", lives = self.state.lives).as_str(),
+                    format!(
+                        "Lives: {lives}\nScore: {score}",
+                        lives = self.state.lives,
+                        score = self.state.score
+                    )
+                    .as_str(),
                     vec2d![SCREEN_WIDTH as f32 - 180.0, 30.0],
                     None,
                     None,
