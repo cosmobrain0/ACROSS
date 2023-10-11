@@ -107,12 +107,12 @@ pub fn shortest_angle_distance(theta1: f32, theta2: f32) -> f32 {
     } else {
         (theta1 - theta2) % (2.0 * PI)
     };
-    log!("distance is {}", distance);
-    if distance.abs() > PI {
+    println!("distance is {}", distance);
+    (if distance.abs() > PI {
         (2.0 * PI - distance.abs()) * -distance.signum()
     } else {
         distance
-    }
+    }) * (theta2 - theta1).signum()
 }
 
 pub fn spawn_tower<'a>(position: Vector) -> Box<dyn Tower<'a> + 'a> {

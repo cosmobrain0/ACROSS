@@ -351,14 +351,25 @@ pub fn main() -> GameResult {
 }
 
 pub mod test {
+    macro_rules! assert_pretty_much_equal {
+        ($a:expr, $b:expr) => {
+            assert!(
+                ($a - $b).abs() <= 0.0001,
+                "{a} and {b} aren't pretty much equal",
+                a = $a,
+                b = $b
+            );
+        };
+    }
+
     use std::f32::consts::PI;
 
     use crate::tower::shortest_angle_distance;
 
     #[test]
     fn shortest_angle_distance_test() {
-        assert_eq!(shortest_angle_distance(0.0, PI / 2.0), PI / 2.0);
-        assert_eq!(shortest_angle_distance(0.0, -PI / 2.0), -PI / 2.0);
-        assert_eq!(shortest_angle_distance(0.0, PI / 2.0 * 3.0), -PI / 2.0);
+        assert_pretty_much_equal!(shortest_angle_distance(0.0, PI / 2.0), PI / 2.0);
+        assert_pretty_much_equal!(shortest_angle_distance(0.0, -PI / 2.0), -PI / 2.0);
+        assert_pretty_much_equal!(shortest_angle_distance(0.0, PI / 2.0 * 3.0), -PI / 2.0);
     }
 }
