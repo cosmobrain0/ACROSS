@@ -9,7 +9,7 @@ mod tower;
 mod ui;
 mod vector;
 
-use files::{save_to_file, SaveData};
+use files::{load_from_file, save_to_file, SaveData};
 use rounds::Round;
 use std::cell::RefCell;
 use std::f32::consts::PI;
@@ -112,6 +112,7 @@ pub struct MainState {
     menu: Rc<RefCell<Menu<'static, GameState<'static>>>>,
     main_menu: Rc<RefCell<Menu<'static, GameState<'static>>>>,
     state: GameState<'static>,
+    score_list: Vec<SaveData>,
 }
 
 pub fn mouse_position(ctx: &mut Context) -> Vector {
@@ -211,6 +212,7 @@ impl MainState {
             menu,
             main_menu,
             state: GameState::new(),
+            score_list: load_from_file("./save-file.csv".into()).unwrap(),
         };
         Ok(s)
     }
@@ -233,11 +235,9 @@ impl event::EventHandler<ggez::GameError> for MainState {
                     // TODO: save score to file
                     // self.state.mode == GameMode::MainMenu;
                     // TODO: some error handling?
-                    save_to_file(
-                        "./save-file.csv".into(),
-                        SaveData::new(chrono::Utc::now(), self.state.score),
-                    )
-                    .unwrap();
+                    let save_data = SaveData::new(chrono::Utc::now(), self.state.score);
+                    save_to_file("./save-file.csv".into(), save_data).unwrap();
+                    self.score_list.push(save_data);
                     self.state = GameState::new();
                     return Ok(());
                 }
@@ -262,6 +262,23 @@ impl event::EventHandler<ggez::GameError> for MainState {
         match self.state.mode {
             GameMode::MainMenu => {
                 self.main_menu.borrow().draw(ctx);
+                for (y_offset, info) in
+                    self.score_list
+                        .iter()
+                        .enumerate()
+                        .map(|(i, SaveData { date, score })| {
+                            (i as f32 * 30.0, format!("{score} points at {date}"))
+                        })
+                {
+                    draw_text(
+                        ctx,
+                        info.as_str(),
+                        vec2d![10.0, 40.0 + y_offset],
+                        None,
+                        None,
+                        Color::WHITE,
+                    );
+                }
             }
             GameMode::Play => {
                 self.state.path.draw(ctx);

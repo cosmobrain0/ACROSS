@@ -6,8 +6,8 @@ use chrono::{DateTime, Utc};
 
 #[derive(Debug, Clone, Copy)]
 pub struct SaveData {
-    date: DateTime<Utc>,
-    score: usize,
+    pub date: DateTime<Utc>,
+    pub score: usize,
 }
 impl SaveData {
     pub fn new(date: DateTime<Utc>, score: usize) -> Self {
@@ -20,16 +20,18 @@ pub fn save_to_file(path: PathBuf, save_data: SaveData) -> Result<(), Box<dyn Er
     let score = save_data.score;
 
     if !path.exists()
-        || std::fs::read_to_string(&path)?
+        || std::fs::read_to_string(&path)
+            .expect("Failed to read file!")
             .lines()
             .filter(|x| x.trim().len() != 0)
             .count()
             == 0
     {
-        fs::write(&path, format!("date,score\n{date},{score}"))?;
+        fs::write(&path, format!("date,score\n{date},{score}"))
+            .expect("Failed to overwrite to file");
     } else {
-        let mut file = fs::File::open(&path)?;
-        write!(file, "\n{date},{score}")?;
+        let mut file = fs::File::open(&path).expect("Failed to open the file!");
+        write!(file, "\n{date},{score}").expect("Failed to append to file!");
     }
 
     Ok(())
