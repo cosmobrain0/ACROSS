@@ -367,9 +367,21 @@ pub mod test {
     use crate::tower::shortest_angle_distance;
 
     #[test]
-    fn shortest_angle_distance_test() {
+    fn shortest_angle_distance_test_from_0() {
         assert_pretty_much_equal!(shortest_angle_distance(0.0, PI / 2.0), PI / 2.0);
         assert_pretty_much_equal!(shortest_angle_distance(0.0, -PI / 2.0), -PI / 2.0);
         assert_pretty_much_equal!(shortest_angle_distance(0.0, PI / 2.0 * 3.0), -PI / 2.0);
+    }
+
+    #[test]
+    fn shortest_angle_distance_test_from_0_reverse() {
+        assert_pretty_much_equal!(shortest_angle_distance(PI / 2.0, 0.0), -PI / 2.0);
+        assert_pretty_much_equal!(shortest_angle_distance(-PI / 2.0, 0.0), PI / 2.0);
+        assert_pretty_much_equal!(shortest_angle_distance(PI / 2.0 * 3.0, 0.0), PI / 2.0);
+    }
+
+    #[test]
+    fn shortest_angle_distance_test_2() {
+        // assert_pretty_much_equal!(shortest_angle_distance())
     }
 }

@@ -91,7 +91,7 @@ impl Range for SectorRange {
                     (enemy.position() - self.position).angle(),
                     self.direction,
                 );
-                if angle.abs() <= self.fov {
+                if angle.abs() <= self.fov / 2.0 {
                     return Some(enemy);
                 }
             }
