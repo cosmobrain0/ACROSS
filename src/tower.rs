@@ -107,7 +107,6 @@ pub fn shortest_angle_distance(theta1: f32, theta2: f32) -> f32 {
     } else {
         (theta1 - theta2) % (2.0 * PI)
     };
-    println!("distance is {}", distance);
     (if distance.abs() > PI {
         (2.0 * PI - distance.abs()) * -distance.signum()
     } else {
@@ -228,7 +227,7 @@ impl<'t> SectorTower<'t> {
             range: SectorRange {
                 position,
                 radius: 200.0,
-                direction: 0.0,
+                direction: PI / 2.0,
                 fov: PI / 2.0,
             },
         }
