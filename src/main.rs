@@ -3,10 +3,12 @@ mod enemy;
 mod path;
 mod pathfind;
 mod renderer;
+mod rounds;
 mod tower;
 mod ui;
 mod vector;
 
+use rounds::Round;
 use std::cell::RefCell;
 use std::f32::consts::PI;
 use std::rc::Rc;
@@ -45,11 +47,10 @@ pub enum GameMode {
 
 pub struct GameState<'a> {
     path: Web,
-    enemies: RefCell<Vec<Enemy<'a, Alive>>>,
-    bullets: RefCell<Vec<Bullet<'a, Alive>>>,
     towers: Vec<Box<dyn Tower<'a> + 'a>>,
     hover_position: Option<Vector>,
     mode: GameMode,
+    round: Round<'a>,
 }
 
 impl<'a> GameState<'a> {
@@ -83,14 +84,11 @@ impl<'a> GameState<'a> {
         .expect("Failed to build a path");
 
         Self {
-            enemies: RefCell::new(vec![Enemy::new_random(Route::from_positions_unchecked(
-                path.route(),
-            ))]),
-            bullets: RefCell::new(Vec::new()),
             path,
             towers: Vec::new(),
             hover_position: None,
             mode: GameMode::MainMenu,
+            round: Round::new(1),
         }
     }
 }
@@ -216,19 +214,22 @@ impl event::EventHandler<ggez::GameError> for MainState {
         match self.state.mode {
             GameMode::MainMenu => Ok(()),
             GameMode::Play => {
-                let enemies = Enemy::update_all(self.state.enemies.replace(Vec::new()));
-                self.state.enemies.replace(enemies);
-                let (bullets, mut enemies) = Bullet::update_all(
-                    self.state.bullets.replace(Vec::new()),
-                    self.state.enemies.replace(Vec::new()),
-                    vec2d![size.0, size.1],
-                );
-                for tower in self.state.towers.iter_mut() {
-                    enemies =
-                        tower.update(enemies, vec2d! {SCREEN_WIDTH as f32, SCREEN_HEIGHT as f32});
-                }
-                self.state.bullets.replace(bullets);
-                self.state.enemies.replace(enemies);
+                // let enemies = Enemy::update_all(self.state.enemies.replace(Vec::new()));
+                // self.state.enemies.replace(enemies);
+                // let (bullets, mut enemies) = Bullet::update_all(
+                //     self.state.bullets.replace(Vec::new()),
+                //     self.state.enemies.replace(Vec::new()),
+                //     vec2d![size.0, size.1],
+                // );
+                // for tower in self.state.towers.iter_mut() {
+                //     enemies =
+                //         tower.update(enemies, vec2d! {SCREEN_WIDTH as f32, SCREEN_HEIGHT as f32});
+                // }
+                // self.state.bullets.replace(bullets);
+                // self.state.enemies.replace(enemies);
+                self.state
+                    .round
+                    .update(&self.state.path, &mut self.state.towers, size);
                 Ok(())
             }
         }
@@ -249,10 +250,10 @@ impl event::EventHandler<ggez::GameError> for MainState {
             }
             GameMode::Play => {
                 self.state.path.draw(ctx);
-                for enemy in self.state.enemies.borrow().iter() {
+                for enemy in self.state.round.enemies().iter() {
                     enemy.draw(ctx);
                 }
-                for bullet in self.state.bullets.borrow().iter() {
+                for bullet in self.state.round.bullets().iter() {
                     bullet.draw(ctx);
                 }
                 for tower in &self.state.towers {

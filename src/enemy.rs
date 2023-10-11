@@ -97,7 +97,7 @@ pub trait EnemyTrait<'a>: std::fmt::Debug {
 }
 
 #[derive(Debug)]
-struct TestEnemy {
+pub struct TestEnemy {
     path: Route,
     progress: f32,
     health: f32,
