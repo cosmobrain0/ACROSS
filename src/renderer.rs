@@ -40,7 +40,6 @@ pub fn draw_sector(
     triangle_count: usize,
     colour: Color,
 ) {
-    // TODO: I have to make my own arc???
     let step_size = (end_angle - start_angle) / triangle_count as f32;
     let triangles: Vec<_> = (0..triangle_count)
         .map(|i| i as f32 / triangle_count as f32 * (end_angle - start_angle))

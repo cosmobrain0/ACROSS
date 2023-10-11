@@ -1,4 +1,4 @@
-use std::cell::RefCell;
+use std::{cell::RefCell, f32::consts::PI};
 
 use ggez::{graphics::Color, Context};
 
@@ -86,12 +86,30 @@ impl Range for SectorRange {
         'a: 'b,
     {
         for enemy in enemies {
-            if enemy.collides(self.position, self.radius) && todo!("Figure out angle stuffs") {
-                return Some(enemy);
+            if enemy.collides(self.position, self.radius) {
+                let angle = shortest_angle_distance(
+                    (enemy.position() - self.position).angle(),
+                    self.direction,
+                );
+                if angle.abs() <= self.fov {
+                    return Some(enemy);
+                }
             }
         }
         None
     }
+}
+
+/// Returns the signed shortest angle between two angles
+fn shortest_angle_distance(theta1: f32, theta2: f32) -> f32 {
+    let distance = (theta2 - theta1).abs() % (2.0 * PI);
+    let shortest_distance = if distance > PI {
+        distance - PI
+    } else {
+        distance
+    };
+    let sign = if theta2 > theta1 { 1.0 } else { -1.0 };
+    shortest_distance * sign
 }
 
 pub fn spawn_tower<'a>(position: Vector) -> Box<dyn Tower<'a> + 'a> {
@@ -180,6 +198,79 @@ impl<'t> Tower<'t> for TestTower<'t> {
 
     fn range(&self) -> &dyn Range {
         &self.range as &dyn Range
+    }
+
+    fn bullets(&self) -> &RefCell<Vec<Bullet<'t, Alive>>> {
+        &self.bullets
+    }
+}
+
+pub struct SectorTower<'t> {
+    time_to_next_shot: usize,
+    position: Vector,
+    bullets: RefCell<Vec<Bullet<'t, Alive>>>,
+    range: SectorRange,
+}
+impl<'t> SectorTower<'t> {
+    #[inline(always)]
+    pub fn cooldown() -> usize {
+        20
+    }
+
+    pub fn new(position: Vector) -> Self {
+        Self {
+            time_to_next_shot: Self::cooldown(),
+            position,
+            bullets: RefCell::new(vec![]),
+            range: SectorRange {
+                position,
+                radius: 200.0,
+                direction: 0.0,
+                fov: PI / 2.0,
+            },
+        }
+    }
+}
+impl<'t> Tower<'t> for SectorTower<'t> {
+    fn price(&self) -> u64 {
+        20
+    }
+
+    fn time_until_shot(&self) -> f32 {
+        self.time_to_next_shot as f32
+    }
+
+    fn update<'a>(
+        &mut self,
+        enemies: Vec<Enemy<'a, Alive>>,
+        bounds: Vector,
+    ) -> Vec<Enemy<'a, Alive>> {
+        // TODO: think about this
+        todo!("Updating SectorTower")
+    }
+
+    fn draw(&self, ctx: &mut Context) {
+        // TODO: think about this
+        todo!("Drawing SectorTower")
+    }
+
+    fn position(&self) -> Vector {
+        self.position
+    }
+
+    fn radius(&self) -> f32 {
+        10.0
+    }
+
+    fn range(&self) -> &dyn Range {
+        &self.range as &dyn Range
+    }
+
+    fn spawn(position: Vector) -> Box<dyn Tower<'t> + 't>
+    where
+        Self: Sized,
+    {
+        Box::new(SectorTower::new(position)) as Box<dyn Tower<'t> + 't>
     }
 
     fn bullets(&self) -> &RefCell<Vec<Bullet<'t, Alive>>> {
