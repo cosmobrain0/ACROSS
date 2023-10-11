@@ -222,6 +222,13 @@ impl event::EventHandler<ggez::GameError> for MainState {
                     &mut self.state.towers,
                     size,
                 ));
+
+                if self.state.lives == 0 {
+                    // TODO: save score to file
+                    // self.state.mode == GameMode::MainMenu;
+                    self.state = GameState::new();
+                }
+
                 if self.state.round.complete() {
                     self.state.round.next();
                 }
@@ -261,7 +268,7 @@ impl event::EventHandler<ggez::GameError> for MainState {
                 draw_text(
                     ctx,
                     format!("Lives: {lives}", lives = self.state.lives).as_str(),
-                    vec2d![200.0, 50.0],
+                    vec2d![SCREEN_WIDTH as f32 - 180.0, 30.0],
                     None,
                     None,
                     Color::WHITE,
