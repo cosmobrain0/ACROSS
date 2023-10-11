@@ -214,22 +214,12 @@ impl event::EventHandler<ggez::GameError> for MainState {
         match self.state.mode {
             GameMode::MainMenu => Ok(()),
             GameMode::Play => {
-                // let enemies = Enemy::update_all(self.state.enemies.replace(Vec::new()));
-                // self.state.enemies.replace(enemies);
-                // let (bullets, mut enemies) = Bullet::update_all(
-                //     self.state.bullets.replace(Vec::new()),
-                //     self.state.enemies.replace(Vec::new()),
-                //     vec2d![size.0, size.1],
-                // );
-                // for tower in self.state.towers.iter_mut() {
-                //     enemies =
-                //         tower.update(enemies, vec2d! {SCREEN_WIDTH as f32, SCREEN_HEIGHT as f32});
-                // }
-                // self.state.bullets.replace(bullets);
-                // self.state.enemies.replace(enemies);
                 self.state
                     .round
                     .update(&self.state.path, &mut self.state.towers, size);
+                if self.state.round.complete() {
+                    self.state.round.next();
+                }
                 Ok(())
             }
         }

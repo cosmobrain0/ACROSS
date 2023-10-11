@@ -21,14 +21,19 @@ impl<'a> Round<'a> {
         Self {
             enemies_left: 10,
             round_number,
-            time_to_next_shot: Self::time_between_enemies(),
+            time_to_next_shot: Self::time_between_enemies(round_number),
             enemies: RefCell::new(vec![]),
             bullets: RefCell::new(vec![]),
         }
     }
 
-    pub fn time_between_enemies() -> usize {
-        60
+    pub fn next(&mut self) {
+        *self = Round::new(self.round_number + 1);
+    }
+
+    /// maybe just make this take &self?
+    pub fn time_between_enemies(round_number: usize) -> usize {
+        60 * round_number
     }
 
     pub fn update(&mut self, path: &Web, towers: &mut Vec<Box<dyn Tower>>, size: (f32, f32)) {
@@ -42,7 +47,7 @@ impl<'a> Round<'a> {
                     )));
                 self.enemies_left -= 1;
             }
-            self.time_to_next_shot = Self::time_between_enemies();
+            self.time_to_next_shot = Self::time_between_enemies(self.round_number);
         }
 
         let enemies = Enemy::update_all(self.enemies.replace(Vec::new()));
@@ -65,5 +70,9 @@ impl<'a> Round<'a> {
 
     pub fn bullets<'b>(&'b self) -> core::cell::Ref<'b, Vec<Bullet<'a, Alive>>> {
         self.bullets.borrow()
+    }
+
+    pub fn complete(&self) -> bool {
+        self.enemies_left == 0 && self.enemies.borrow().len() == 0
     }
 }
