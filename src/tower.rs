@@ -101,12 +101,12 @@ impl Range for SectorRange {
 }
 
 /// Returns the signed shortest angle between two angles
-fn shortest_angle_distance(theta1: f32, theta2: f32) -> f32 {
+pub fn shortest_angle_distance(theta1: f32, theta2: f32) -> f32 {
     let distance = (theta2 - theta1).abs() % (2.0 * PI);
-    let shortest_distance = if distance > PI {
-        distance - PI
+    let (sign, shortest_distance) = if distance > PI {
+        (theta2 < theta1, distance - PI)
     } else {
-        distance
+        (theta2 > theta1, distance)
     };
     let sign = if theta2 > theta1 { 1.0 } else { -1.0 };
     shortest_distance * sign

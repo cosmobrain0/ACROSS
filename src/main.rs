@@ -349,3 +349,16 @@ pub fn main() -> GameResult {
     let state = MainState::new(&mut ctx)?;
     event::run(ctx, event_loop, state)
 }
+
+pub mod test {
+    use std::f32::consts::PI;
+
+    use crate::tower::shortest_angle_distance;
+
+    #[test]
+    fn shortest_angle_distance_test() {
+        assert_eq!(shortest_angle_distance(0.0, PI / 2.0), PI / 2.0);
+        assert_eq!(shortest_angle_distance(0.0, -PI / 2.0), -PI / 2.0);
+        assert_eq!(shortest_angle_distance(0.0, PI / 2.0 * 3.0), -PI / 2.0);
+    }
+}
