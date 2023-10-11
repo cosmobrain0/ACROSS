@@ -57,6 +57,7 @@ pub struct GameState<'a> {
     round: Round<'a>,
     lives: usize,
     score: usize,
+    money: usize,
 }
 
 impl<'a> GameState<'a> {
@@ -97,6 +98,7 @@ impl<'a> GameState<'a> {
             round: Round::new(1),
             lives: STARTING_LIVES,
             score: 0,
+            money: 30,
         }
     }
 }
@@ -129,19 +131,6 @@ impl MainState {
         let menu: Rc<RefCell<Menu<GameState>>> =
             Rc::new(RefCell::new(Menu::new(vec2d!(0.0, 0.0), 1.0, None)));
         let buttons = vec![
-            Button::new(
-                vec2d![0.0, 100.0],
-                vec2d![100.0, 100.0],
-                Rc::clone(&menu),
-                |state: &mut GameState| {
-                    state.towers.push(spawn_tower(vec2d![
-                        SCREEN_WIDTH as f32,
-                        SCREEN_HEIGHT as f32
-                    ]));
-                },
-                "Spawn Tower",
-            )
-            .into(),
             DragButton::new(
                 vec2d![0.0, 300.0],
                 vec2d![75.0, 75.0],
@@ -150,7 +139,10 @@ impl MainState {
                 |_start, position, _movement, state| state.hover_position = Some(position),
                 |_start, position, state| {
                     state.hover_position = None;
-                    state.towers.push(spawn_tower(position));
+                    if let Some((tower, price)) = spawn_tower(position, state.money) {
+                        state.money -= price;
+                        state.towers.push(tower);
+                    }
                 },
                 "Drag!",
             )
@@ -230,6 +222,7 @@ impl event::EventHandler<ggez::GameError> for MainState {
                         .update(&self.state.path, &mut self.state.towers, size);
                 self.state.lives = self.state.lives.saturating_sub(lives_lost);
                 self.state.score = self.state.score.saturating_add(enemies_killed);
+                self.state.money += enemies_killed * 2;
 
                 if self.state.lives == 0 {
                     // TODO: save score to file
@@ -304,12 +297,13 @@ impl event::EventHandler<ggez::GameError> for MainState {
                 draw_text(
                     ctx,
                     format!(
-                        "Lives: {lives}\nScore: {score}",
+                        "Lives: {lives}\nScore: {score}\nMoney: {money}",
                         lives = self.state.lives,
-                        score = self.state.score
+                        score = self.state.score,
+                        money = self.state.money,
                     )
                     .as_str(),
-                    vec2d![SCREEN_WIDTH as f32 - 180.0, 30.0],
+                    vec2d![SCREEN_WIDTH as f32 - 250.0, 30.0],
                     None,
                     None,
                     Color::WHITE,

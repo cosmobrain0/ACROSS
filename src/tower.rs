@@ -12,7 +12,9 @@ use crate::{
 };
 
 pub trait Tower<'t> {
-    fn price(&self) -> u64;
+    fn price() -> usize
+    where
+        Self: Sized;
     fn time_until_shot(&self) -> f32;
     fn update<'a>(
         &mut self,
@@ -114,8 +116,13 @@ pub fn shortest_angle_distance(theta1: f32, theta2: f32) -> f32 {
     }) * (theta2 - theta1).signum()
 }
 
-pub fn spawn_tower<'a>(position: Vector) -> Box<dyn Tower<'a> + 'a> {
-    SectorTower::spawn(position)
+pub fn spawn_tower<'a>(position: Vector, money: usize) -> Option<(Box<dyn Tower<'a> + 'a>, usize)> {
+    let price = SectorTower::price() as usize;
+    if price <= money {
+        Some((SectorTower::spawn(position), price))
+    } else {
+        None
+    }
 }
 
 pub struct TestTower<'t> {
@@ -144,7 +151,10 @@ impl<'t> TestTower<'t> {
 }
 impl<'t> Tower<'t> for TestTower<'t> {
     #[inline(always)]
-    fn price(&self) -> u64 {
+    fn price() -> usize
+    where
+        Self: Sized,
+    {
         10
     }
 
@@ -234,7 +244,10 @@ impl<'t> SectorTower<'t> {
     }
 }
 impl<'t> Tower<'t> for SectorTower<'t> {
-    fn price(&self) -> u64 {
+    fn price() -> usize
+    where
+        Self: Sized,
+    {
         20
     }
 
