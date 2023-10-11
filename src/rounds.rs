@@ -36,7 +36,12 @@ impl<'a> Round<'a> {
         60 * round_number
     }
 
-    pub fn update(&mut self, path: &Web, towers: &mut Vec<Box<dyn Tower>>, size: (f32, f32)) {
+    pub fn update(
+        &mut self,
+        path: &Web,
+        towers: &mut Vec<Box<dyn Tower>>,
+        size: (f32, f32),
+    ) -> usize {
         self.time_to_next_shot = self.time_to_next_shot.saturating_sub(1);
         if self.time_to_next_shot == 0 {
             if self.enemies_left > 0 {
@@ -51,6 +56,7 @@ impl<'a> Round<'a> {
         }
 
         let enemies = Enemy::update_all(self.enemies.replace(Vec::new()));
+        let lives_lost = self.enemies.borrow().len() - enemies.len();
         self.enemies.replace(enemies);
         let (bullets, mut enemies) = Bullet::update_all(
             self.bullets.replace(Vec::new()),
@@ -62,6 +68,7 @@ impl<'a> Round<'a> {
         }
         self.bullets.replace(bullets);
         self.enemies.replace(enemies);
+        lives_lost
     }
 
     pub fn enemies<'b>(&'b self) -> core::cell::Ref<'b, Vec<Enemy<'a, Alive>>> {

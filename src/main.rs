@@ -28,6 +28,7 @@ use vector::*;
 
 pub const SCREEN_WIDTH: usize = 1920;
 pub const SCREEN_HEIGHT: usize = 1080;
+pub const STARTING_LIVES: usize = 5;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Alive;
@@ -51,6 +52,7 @@ pub struct GameState<'a> {
     hover_position: Option<Vector>,
     mode: GameMode,
     round: Round<'a>,
+    lives: usize,
 }
 
 impl<'a> GameState<'a> {
@@ -89,6 +91,7 @@ impl<'a> GameState<'a> {
             hover_position: None,
             mode: GameMode::MainMenu,
             round: Round::new(1),
+            lives: STARTING_LIVES,
         }
     }
 }
@@ -214,9 +217,10 @@ impl event::EventHandler<ggez::GameError> for MainState {
         match self.state.mode {
             GameMode::MainMenu => Ok(()),
             GameMode::Play => {
-                self.state
-                    .round
-                    .update(&self.state.path, &mut self.state.towers, size);
+                self.state.lives -=
+                    self.state
+                        .round
+                        .update(&self.state.path, &mut self.state.towers, size);
                 if self.state.round.complete() {
                     self.state.round.next();
                 }
