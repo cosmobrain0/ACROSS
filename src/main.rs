@@ -267,13 +267,19 @@ impl event::EventHandler<ggez::GameError> for MainState {
                         .iter()
                         .enumerate()
                         .map(|(i, SaveData { date, score })| {
-                            (i as f32 * 30.0, format!("{score} points at {date}"))
+                            (
+                                i as f32 * 30.0,
+                                format!(
+                                    "{score} points at {date}",
+                                    date = date.format("%d/%m/%Y %H:%M:%S")
+                                ),
+                            )
                         })
                 {
                     draw_text(
                         ctx,
                         info.as_str(),
-                        vec2d![10.0, 40.0 + y_offset],
+                        vec2d![10.0, 10.0 + y_offset],
                         None,
                         None,
                         Color::WHITE,

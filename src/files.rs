@@ -16,7 +16,7 @@ impl SaveData {
 }
 
 pub fn save_to_file(path: PathBuf, save_data: SaveData) -> Result<(), Box<dyn Error>> {
-    let date = save_data.date.format("%d/%m/%Y %H:%M:%S");
+    let date = save_data.date.to_rfc3339();
     let score = save_data.score;
 
     if !path.exists()
@@ -51,6 +51,9 @@ pub fn load_from_file(path: PathBuf) -> Result<Vec<SaveData>, Box<dyn Error>> {
             } else {
                 None
             }
+        })
+        .inspect(|x| {
+            dbg!(&x);
         })
         .map(|(date, score)| (DateTime::parse_from_rfc3339(date), score.parse::<usize>()))
         .filter(|(date, score)| date.is_ok() && score.is_ok())
