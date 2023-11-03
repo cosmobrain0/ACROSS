@@ -1,4 +1,5 @@
 mod bullet;
+mod collisions;
 mod enemy;
 mod files;
 mod path;

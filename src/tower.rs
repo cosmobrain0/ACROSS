@@ -4,6 +4,7 @@ use ggez::{graphics::Color, Context};
 
 use crate::{
     bullet::{Bullet, BulletTrait, Projectile},
+    collisions::{line_circle_collision, point_circle_collision, LineCircleCollision},
     enemy::Enemy,
     renderer::{draw_circle, draw_sector},
     vec2d,
@@ -37,6 +38,8 @@ pub trait Range {
     fn get_target<'a, 'b>(&self, enemies: &'b [Enemy<'a, Alive>]) -> Option<&'b Enemy<'a, Alive>>
     where
         'a: 'b;
+    /// Returns the length of line which this range can see
+    fn line_intersection(&self, a: Vector, b: Vector) -> f32;
 }
 pub struct CircularRange {
     position: Vector,
@@ -59,6 +62,23 @@ impl Range for CircularRange {
         enemies
             .iter()
             .find(|&enemy| enemy.collides(self.position, self.radius))
+    }
+
+    fn line_intersection(&self, a: Vector, b: Vector) -> f32 {
+        let collisions = line_circle_collision(self.position, self.radius, a, b);
+        match (
+            collisions,
+            point_circle_collision(self.position, self.radius, a).is_some(),
+            point_circle_collision(self.position, self.radius, b).is_some(),
+        ) {
+            (LineCircleCollision::None | LineCircleCollision::One(_), _, true)
+            | (LineCircleCollision::None | LineCircleCollision::One(_), true, _) => {
+                (a - b).length()
+            }
+            (LineCircleCollision::None, false, false) => 0.0,
+            (LineCircleCollision::One(_), false, false) => 0.0, // unreachable
+            (LineCircleCollision::Two(p1, p2), _, _) => (p1 - p2).length(),
+        }
     }
 }
 
@@ -99,6 +119,10 @@ impl Range for SectorRange {
             }
         }
         None
+    }
+
+    fn line_intersection(&self, a: Vector, b: Vector) -> f32 {
+        todo!()
     }
 }
 
