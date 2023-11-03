@@ -56,7 +56,7 @@ pub fn line_circle_collision(
         let x_coords = quadratic(
             1.0 + m * m,
             2.0 * (m * (c - centre.y) - centre.x),
-            (centre.x * centre.x + (c - centre.y) * (c - centre.y)),
+            centre.x * centre.x + (c - centre.y) * (c - centre.y),
         );
         LineCircleCollision::from_vec(
             x_coords

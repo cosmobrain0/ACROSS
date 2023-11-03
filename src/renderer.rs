@@ -84,7 +84,7 @@ pub fn draw_text(
 
 pub fn draw_line(ctx: &mut Context, a: Vector, b: Vector, thickness: f32, colour: Color) {
     let mesh = MeshBuilder::new()
-        .line(&[[a.x, a.y], [b.x, b.y]], thickness, colour)
+        .line(&[[a.x, a.y], [b.x, b.y], [a.x, a.y]], thickness, colour)
         .unwrap()
         .build(ctx)
         .unwrap();

@@ -10,6 +10,7 @@ mod tower;
 mod ui;
 mod vector;
 
+use collisions::line_circle_collision;
 use files::{load_from_file, save_to_file, SaveData};
 use rounds::Round;
 use std::cell::RefCell;
@@ -25,7 +26,7 @@ use ggez::input::mouse;
 use ggez::{Context, GameResult};
 
 use path::{Route, Web};
-use renderer::{draw_circle, draw_sector, draw_text};
+use renderer::{draw_circle, draw_line, draw_sector, draw_text};
 use tower::{spawn_tower, Tower};
 use ui::{Button, DragButton, Menu};
 use vector::*;
@@ -45,6 +46,7 @@ pub enum Updated<AliveType, DeadType> {
     Dead(DeadType),
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GameMode {
     MainMenu,
     Play,
@@ -117,6 +119,8 @@ pub struct MainState {
     main_menu: Rc<RefCell<Menu<'static, GameState<'static>>>>,
     state: GameState<'static>,
     score_list: Vec<SaveData>,
+    t_point_a: Option<Vector>,
+    t_point_b: Option<Vector>,
 }
 
 pub fn mouse_position(ctx: &mut Context) -> Vector {
@@ -207,6 +211,8 @@ impl MainState {
             main_menu,
             state: GameState::new(),
             score_list: load_from_file("./save-file.csv".into()).unwrap(),
+            t_point_a: None,
+            t_point_b: None,
         };
         Ok(s)
     }
@@ -218,28 +224,28 @@ impl event::EventHandler<ggez::GameError> for MainState {
         match self.state.mode {
             GameMode::MainMenu => Ok(()),
             GameMode::Play => {
-                let (lives_lost, enemies_killed) =
-                    self.state
-                        .round
-                        .update(&self.state.path, &mut self.state.towers, size);
-                self.state.lives = self.state.lives.saturating_sub(lives_lost);
-                self.state.score = self.state.score.saturating_add(enemies_killed);
-                self.state.money += enemies_killed * 2;
+                // let (lives_lost, enemies_killed) =
+                //     self.state
+                //         .round
+                //         .update(&self.state.path, &mut self.state.towers, size);
+                // self.state.lives = self.state.lives.saturating_sub(lives_lost);
+                // self.state.score = self.state.score.saturating_add(enemies_killed);
+                // self.state.money += enemies_killed * 2;
 
-                if self.state.lives == 0 {
-                    // TODO: save score to file
-                    // self.state.mode == GameMode::MainMenu;
-                    // TODO: some error handling?
-                    let save_data = SaveData::new(chrono::Utc::now(), self.state.score);
-                    save_to_file("./save-file.csv".into(), save_data).unwrap();
-                    self.score_list.push(save_data);
-                    self.state = GameState::new();
-                    return Ok(());
-                }
+                // if self.state.lives == 0 {
+                //     // TODO: save score to file
+                //     // self.state.mode == GameMode::MainMenu;
+                //     // TODO: some error handling?
+                //     let save_data = SaveData::new(chrono::Utc::now(), self.state.score);
+                //     save_to_file("./save-file.csv".into(), save_data).unwrap();
+                //     self.score_list.push(save_data);
+                //     self.state = GameState::new();
+                //     return Ok(());
+                // }
 
-                if self.state.round.complete() {
-                    self.state.round.next();
-                }
+                // if self.state.round.complete() {
+                //     self.state.round.next();
+                // }
                 Ok(())
             }
         }
@@ -282,34 +288,50 @@ impl event::EventHandler<ggez::GameError> for MainState {
                 }
             }
             GameMode::Play => {
-                self.state.path.draw(ctx);
-                for enemy in self.state.round.enemies().iter() {
-                    enemy.draw(ctx);
+                // self.state.path.draw(ctx);
+                // for enemy in self.state.round.enemies().iter() {
+                //     enemy.draw(ctx);
+                // }
+                // for bullet in self.state.round.bullets().iter() {
+                //     bullet.draw(ctx);
+                // }
+                // for tower in &self.state.towers {
+                //     tower.draw(ctx);
+                // }
+                // if let Some(position) = self.state.hover_position {
+                //     draw_circle(ctx, position, 10.0, Color::WHITE);
+                // }
+                // self.menu.borrow().draw(ctx);
+                // draw_text(
+                //     ctx,
+                //     format!(
+                //         "Lives: {lives}\nScore: {score}\nMoney: {money}",
+                //         lives = self.state.lives,
+                //         score = self.state.score,
+                //         money = self.state.money,
+                //     )
+                //     .as_str(),
+                //     vec2d![SCREEN_WIDTH as f32 - 250.0, 30.0],
+                //     None,
+                //     None,
+                //     Color::WHITE,
+                // );
+                if let Some(a) = self.t_point_a {
+                    if let Some(b) = self.t_point_b {
+                        draw_line(ctx, a, b, 3.0, Color::RED);
+                    }
                 }
-                for bullet in self.state.round.bullets().iter() {
-                    bullet.draw(ctx);
-                }
-                for tower in &self.state.towers {
-                    tower.draw(ctx);
-                }
-                if let Some(position) = self.state.hover_position {
-                    draw_circle(ctx, position, 10.0, Color::WHITE);
-                }
-                self.menu.borrow().draw(ctx);
-                draw_text(
-                    ctx,
-                    format!(
-                        "Lives: {lives}\nScore: {score}\nMoney: {money}",
-                        lives = self.state.lives,
-                        score = self.state.score,
-                        money = self.state.money,
-                    )
-                    .as_str(),
-                    vec2d![SCREEN_WIDTH as f32 - 250.0, 30.0],
-                    None,
-                    None,
-                    Color::WHITE,
-                );
+                let centre = vec2d![SCREEN_WIDTH as f32, SCREEN_HEIGHT as f32] / 2.0;
+                let colour = self.t_point_a.is_some_and(|a| {
+                    self.t_point_b.is_some_and(|b| {
+                        line_circle_collision(centre, 20.0, a, b)
+                            .into_iter()
+                            .count()
+                            > 0
+                    })
+                });
+                let colour = if colour { Color::GREEN } else { Color::RED };
+                draw_circle(ctx, centre, 20.0, colour);
             }
         }
 
@@ -338,7 +360,8 @@ impl event::EventHandler<ggez::GameError> for MainState {
                     vec![&mut self.main_menu]
                 }
                 GameMode::Play => {
-                    vec![&mut self.menu] // maybe I cna do this with a slice?
+                    // vec![&mut self.menu] // maybe I cna do this with a slice?
+                    vec![]
                 }
             }
             .into_iter()
@@ -346,6 +369,12 @@ impl event::EventHandler<ggez::GameError> for MainState {
                 x.borrow_mut()
                     .input_start(mouse_position(ctx), &mut self.state)
             });
+        }
+
+        if self.state.mode == GameMode::Play && button == event::MouseButton::Left {
+            self.t_point_a = Some(mouse_position(ctx));
+        } else if self.state.mode == GameMode::Play && button == event::MouseButton::Right {
+            self.t_point_b = Some(mouse_position(ctx));
         }
     }
 
