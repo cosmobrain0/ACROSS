@@ -4,7 +4,10 @@ use ggez::{graphics::Color, Context};
 
 use crate::{
     bullet::{Bullet, BulletTrait, Projectile},
-    collisions::{line_circle_collision, point_circle_collision, LineCircleCollision},
+    collisions::{
+        line_circle_collision, point_circle_collision, point_sector_collision,
+        sector_line_collision, LineCircleCollision,
+    },
     enemy::Enemy,
     renderer::{draw_circle, draw_sector},
     vec2d,
@@ -121,8 +124,25 @@ impl Range for SectorRange {
         None
     }
 
+    /// FIXME: what if the line goes through the edges of the sector?
+    /// then the lines and the arc both return intersection points
+    /// and there are more than 2
     fn line_intersection(&self, a: Vector, b: Vector) -> f32 {
-        todo!()
+        let points =
+            sector_line_collision(self.position, self.radius, self.direction, self.fov, a, b);
+        let a_in_circle =
+            point_sector_collision(self.position, self.radius, self.direction, self.fov, a);
+        let b_in_circle =
+            point_sector_collision(self.position, self.radius, self.direction, self.fov, b);
+
+        match (points.len(), a_in_circle, b_in_circle, a_in_circle || b_in_circle) {
+            (0, _, _, true) => (a-b).length(),
+            (0, _, _, false) => 0.0,
+            (1, true, _, _) => (points[0]-a).length(),
+            (1, _, true, _) => (points[0]-b).length(),
+            (2, _, _, _) => (points[0]-points[1]).length(),
+            _ => unreachable!("There can't be more than two intersection points between a line and a sector, but I got: {:#?}", &points)
+        }
     }
 }
 

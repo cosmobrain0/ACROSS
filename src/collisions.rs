@@ -1,3 +1,4 @@
+use crate::tower::shortest_angle_distance;
 use crate::vec2d;
 use crate::Vector;
 
@@ -15,6 +16,20 @@ impl LineCircleCollision {
             2 => Some(LineCircleCollision::Two(v[0], v[1])),
             _ => None,
         }
+    }
+}
+impl IntoIterator for LineCircleCollision {
+    type Item = Vector;
+
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+
+    fn into_iter(self) -> Self::IntoIter {
+        match self {
+            LineCircleCollision::None => vec![],
+            LineCircleCollision::One(x) => vec![x],
+            LineCircleCollision::Two(a, b) => vec![a, b],
+        }
+        .into_iter()
     }
 }
 
@@ -89,6 +104,94 @@ impl IntoIterator for QuadraticSolution {
         }
         .into_iter()
     }
+}
+
+/// This probably breaks horribly if a line has a length of 0
+pub fn line_line_collision(a1: Vector, b1: Vector, a2: Vector, b2: Vector) -> Option<Vector> {
+    // line: r = [a] + t[b]
+    let (point1, direction1) = (a1, b1 - a1);
+    let (point2, direction2) = (a2, b2 - a2);
+    let (param1, param2) = simultaneous_equations(
+        direction1.x,
+        -direction2.x,
+        point1.x - point2.x,
+        direction1.y,
+        -direction2.y,
+        point1.y - point2.y,
+    );
+    let collision = {
+        let p1 = point1 + direction1 * param1;
+        let p2 = point2 + direction2 * param2;
+        (p1 + p2) / 2.0
+    };
+    if param1 >= 0.0
+        && param1 <= (a1 - b1).length() / direction1.length()
+        && param2 >= 0.0
+        && param2 <= (a2 - b2).length() / direction2.length()
+    {
+        Some(collision)
+    } else {
+        None
+    }
+}
+
+/// Solves
+/// ax + by = c
+/// dx + ey = f
+/// simultaneously. Probably panics if you give it something unsolveable?
+/// TODO: figure out when this panics/returns NaN and fix that
+fn simultaneous_equations(a: f32, b: f32, c: f32, d: f32, e: f32, f: f32) -> (f32, f32) {
+    let y = (c / a - f / d) / (b / a - e / d);
+    let x = (c - b * y) / a;
+    (x, y)
+}
+
+pub fn point_sector_collision(
+    centre: Vector,
+    radius: f32,
+    direction: f32,
+    fov: f32,
+    point: Vector,
+) -> Option<Vector> {
+    point_circle_collision(centre, radius, point)
+        .map(|p| {
+            if shortest_angle_distance((p - centre).angle(), direction).abs() <= fov / 2.0 {
+                Some(p)
+            } else {
+                None
+            }
+        })
+        .flatten()
+}
+
+pub fn sector_line_collision(
+    centre: Vector,
+    radius: f32,
+    direction: f32,
+    fov: f32,
+    a: Vector,
+    b: Vector,
+) -> Vec<Vector> {
+    let arc = line_circle_collision(centre, radius, a, b)
+        .into_iter()
+        .filter(|p| shortest_angle_distance((*p - centre).angle(), direction).abs() <= fov / 2.0);
+    let line1 = line_line_collision(
+        centre,
+        centre + Vector::from_polar(direction - fov / 2.0, radius),
+        a,
+        b,
+    )
+    .map(|x| vec![x])
+    .unwrap_or_else(|| vec![]);
+    let line2 = line_line_collision(
+        centre,
+        centre + Vector::from_polar(direction + fov / 2.0, radius),
+        a,
+        b,
+    )
+    .map(|x| vec![x])
+    .unwrap_or_else(|| vec![]);
+    arc.chain(line1).chain(line2).collect()
 }
 
 fn quadratic(a: f32, b: f32, c: f32) -> QuadraticSolution {
