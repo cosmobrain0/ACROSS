@@ -108,7 +108,8 @@ impl IntoIterator for QuadraticSolution {
 
 /// This probably breaks horribly if a line has a length of 0
 pub fn line_line_collision(a1: Vector, b1: Vector, a2: Vector, b2: Vector) -> Option<Vector> {
-    // line: r = [a] + t[b]
+    // finding the vector equation of the lines
+    // so I don't have to deal with vertical lines having undefined gradients
     let (point1, direction1) = (a1, b1 - a1);
     let (point2, direction2) = (a2, b2 - a2);
     let (param1, param2) = simultaneous_equations(

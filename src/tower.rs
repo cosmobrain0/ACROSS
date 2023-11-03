@@ -131,9 +131,11 @@ impl Range for SectorRange {
         let points =
             sector_line_collision(self.position, self.radius, self.direction, self.fov, a, b);
         let a_in_circle =
-            point_sector_collision(self.position, self.radius, self.direction, self.fov, a);
+            point_sector_collision(self.position, self.radius, self.direction, self.fov, a)
+                .is_some();
         let b_in_circle =
-            point_sector_collision(self.position, self.radius, self.direction, self.fov, b);
+            point_sector_collision(self.position, self.radius, self.direction, self.fov, b)
+                .is_some();
 
         match (points.len(), a_in_circle, b_in_circle, a_in_circle || b_in_circle) {
             (0, _, _, true) => (a-b).length(),
