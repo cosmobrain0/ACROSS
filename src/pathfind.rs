@@ -8,16 +8,18 @@ impl From<usize> for NodeIndex {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Connection {
     start: NodeIndex,
     end: NodeIndex, // I don't like this
+    weight: f32, // is this just due to towers or does it consider distances? is it [0-1] or something else?
 }
-impl From<(usize, usize)> for Connection {
-    fn from(value: (usize, usize)) -> Self {
+impl From<(usize, usize, f32)> for Connection {
+    fn from(value: (usize, usize, f32)) -> Self {
         Self {
             start: NodeIndex(value.0),
             end: NodeIndex(value.1),
+            weight: value.2,
         }
     }
 }
@@ -96,6 +98,7 @@ impl Pathfinder {
                 |Connection {
                      start: NodeIndex(start),
                      end: NodeIndex(end),
+                     weight: _,
                  }| *start >= nodes.len() || *end >= nodes.len(),
             )
         {

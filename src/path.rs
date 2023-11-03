@@ -91,6 +91,16 @@ impl Route {
     }
 }
 
+/// This is a stupid idea
+/// but I think the easiest way of doing this
+/// is to construct a new web every time a weight changes
+/// what could go wrong?
+/// Well, an enemy which relies on this is gonna need a reference
+/// so ig I need a Box or something?
+/// I'll try a refcell
+/// Oh wait it's fine
+/// Because routes are independent of the web anyway
+/// Because that was a great idea too, wasn't it?
 #[derive(Debug)]
 pub struct Web {
     points: Vec<Rc<RefCell<Point>>>,
@@ -101,7 +111,7 @@ pub struct Web {
 impl Web {
     pub fn new(
         positions: Vec<Vector>,
-        connections: Vec<(usize, usize)>,
+        connections: Vec<(usize, usize, f32)>,
         start: usize,
         end: usize,
     ) -> Result<Self, WebCreationError> {
@@ -109,7 +119,7 @@ impl Web {
             .iter()
             .map(|&x| Rc::new(RefCell::new(Point::new(x))))
             .collect();
-        for &(a, b) in connections.iter() {
+        for &(a, b, _) in connections.iter() {
             points[a]
                 .borrow_mut()
                 .add_connections(&vec![Rc::clone(&points[b])])

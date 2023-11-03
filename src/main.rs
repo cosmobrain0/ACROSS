@@ -82,7 +82,8 @@ impl<'a> GameState<'a> {
                 (4, 3),
             ]
             .into_iter()
-            .map(|(a, b)| [(a, b), (b, a)])
+            .map(|(a, b)| (a, b, 0.0))
+            .map(|(a, b, weight)| [(a, b, weight), (b, a, weight)])
             .flatten()
             .collect(),
             0,
