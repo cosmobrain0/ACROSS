@@ -5,8 +5,8 @@ use ggez::{graphics::Color, Context};
 use crate::{
     bullet::{Bullet, BulletTrait, Projectile},
     collisions::{
-        line_circle_collision, point_circle_collision, point_sector_collision,
-        sector_line_collision, LineCircleCollision,
+        line_circle_collision, line_sector_collision, point_circle_collision,
+        point_sector_collision, LineCircleCollision,
     },
     enemy::Enemy,
     renderer::{draw_circle, draw_sector},
@@ -129,7 +129,7 @@ impl Range for SectorRange {
     /// and there are more than 2
     fn line_intersection(&self, a: Vector, b: Vector) -> f32 {
         let points =
-            sector_line_collision(self.position, self.radius, self.direction, self.fov, a, b);
+            line_sector_collision(self.position, self.radius, self.direction, self.fov, a, b);
         let a_in_circle =
             point_sector_collision(self.position, self.radius, self.direction, self.fov, a)
                 .is_some();

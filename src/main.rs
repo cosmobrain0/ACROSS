@@ -10,7 +10,7 @@ mod tower;
 mod ui;
 mod vector;
 
-use collisions::line_circle_collision;
+use collisions::{line_circle_collision, line_sector_collision};
 use files::{load_from_file, save_to_file, SaveData};
 use rounds::Round;
 use std::cell::RefCell;
@@ -319,19 +319,24 @@ impl event::EventHandler<ggez::GameError> for MainState {
                 if let Some(a) = self.t_point_a {
                     if let Some(b) = self.t_point_b {
                         draw_line(ctx, a, b, 3.0, Color::RED);
+                        draw_circle(ctx, a, 10.0, Color::WHITE);
+                        draw_circle(ctx, b, 10.0, Color::BLUE);
                     }
                 }
                 let centre = vec2d![SCREEN_WIDTH as f32, SCREEN_HEIGHT as f32] / 2.0;
+                let (direction, fov) = (0.0, PI / 2.0);
+                let (start_angle, end_angle) = (direction - fov / 2.0, direction + fov / 2.0);
+                let radius = 50.0;
                 let colour = self.t_point_a.is_some_and(|a| {
                     self.t_point_b.is_some_and(|b| {
-                        line_circle_collision(centre, 20.0, a, b)
+                        line_circle_collision(centre, radius, a, b)
                             .into_iter()
                             .count()
                             > 0
                     })
                 });
                 let colour = if colour { Color::GREEN } else { Color::RED };
-                draw_circle(ctx, centre, 20.0, colour);
+                draw_circle(ctx, centre, radius, colour);
             }
         }
 

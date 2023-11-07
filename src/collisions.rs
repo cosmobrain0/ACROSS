@@ -2,6 +2,7 @@ use crate::tower::shortest_angle_distance;
 use crate::vec2d;
 use crate::Vector;
 
+/// a line fully enclosed by a circle is represented with `LineCircleCollision::None`
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum LineCircleCollision {
     None,
@@ -50,18 +51,15 @@ pub fn line_circle_collision(
     let m = (b.y - a.y) / (b.x - a.x);
     if m.is_finite() {
         let c = b.y - m * b.x;
-        // (x - a)^2 + (mx + c - b)^2 = r^2
-        // x^2 - 2ax + a^2 + (mx)^2 + 2m(c-b)x + (c-b)^2 = r^2
-        // (1+m^2)x^2 + 2(m(c-b) - a)x + (a^2 + (c-b)^2) = r^2
         let x_coords = quadratic(
             1.0 + m * m,
             2.0 * (m * (c - centre.y) - centre.x),
-            centre.x * centre.x + (c - centre.y) * (c - centre.y),
+            centre.x * centre.x + (c - centre.y) * (c - centre.y) - radius * radius,
         );
         LineCircleCollision::from_vec(
             x_coords
                 .into_iter()
-                .filter(|x| *x >= a.x.min(b.x) && *x <= a.x.max(b.x))
+                // .filter(|x| *x >= a.x.min(b.x) && *x <= a.x.max(b.x))
                 .map(|x| vec2d![x, m * x + c])
                 .collect(),
         )
@@ -165,7 +163,7 @@ pub fn point_sector_collision(
         .flatten()
 }
 
-pub fn sector_line_collision(
+pub fn line_sector_collision(
     centre: Vector,
     radius: f32,
     direction: f32,
