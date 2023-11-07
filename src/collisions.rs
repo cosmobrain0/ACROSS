@@ -48,6 +48,13 @@ pub fn line_circle_collision(
     a: Vector,
     b: Vector,
 ) -> LineCircleCollision {
+    let mut collisions = Vec::with_capacity(3);
+    for endpoint in [a, b] {
+        if point_circle_collision(centre, radius, endpoint).is_some() {
+            collisions.push(endpoint);
+        }
+    }
+
     let m = (b.y - a.y) / (b.x - a.x);
     if m.is_finite() {
         let c = b.y - m * b.x;
@@ -56,14 +63,12 @@ pub fn line_circle_collision(
             2.0 * (m * (c - centre.y) - centre.x),
             centre.x * centre.x + (c - centre.y) * (c - centre.y) - radius * radius,
         );
-        LineCircleCollision::from_vec(
+        collisions.extend(
             x_coords
                 .into_iter()
-                // .filter(|x| *x >= a.x.min(b.x) && *x <= a.x.max(b.x))
-                .map(|x| vec2d![x, m * x + c])
-                .collect(),
-        )
-        .unwrap()
+                .filter(|x| *x >= a.x.min(b.x) && *x <= a.x.max(b.x))
+                .map(|x| vec2d![x, m * x + c]),
+        );
     } else {
         let x = a.x;
         let dy = {
@@ -74,12 +79,15 @@ pub fn line_circle_collision(
                 None
             }
         };
-        LineCircleCollision::from_vec(
+        collisions.extend(
             dy.map(|dy| vec![vec2d![x, centre.y + dy], vec2d![x, centre.y - dy]])
-                .unwrap_or_else(|| vec![]),
-        )
-        .unwrap()
+                .unwrap_or_else(|| vec![])
+                .into_iter(),
+        );
     }
+
+    assert!(collisions.len() <= 2, "Oh no! {:#?}", collisions);
+    LineCircleCollision::from_vec(collisions).unwrap()
 }
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -176,6 +184,7 @@ pub fn line_sector_collision(
     a: Vector,
     b: Vector,
 ) -> Vec<Vector> {
+    // this handles endpoints inside the arc
     let arc = line_circle_collision(centre, radius, a, b)
         .into_iter()
         .filter(|p| shortest_angle_distance((*p - centre).angle(), direction).abs() <= fov / 2.0);
