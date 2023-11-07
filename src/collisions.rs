@@ -145,14 +145,10 @@ pub fn line_line_collision(a1: Vector, b1: Vector, a2: Vector, b2: Vector) -> Op
 /// Solves
 /// ax + by = c
 /// dx + ey = f
-/// simultaneously. Probably panics if you give it something unsolveable?
-/// TODO: figure out when this panics/returns NaN and fix that
+/// simultaneously.
+/// # Panics
+/// Panics if lines are parallel
 fn simultaneous_equations(a: f32, b: f32, c: f32, d: f32, e: f32, f: f32) -> (f32, f32) {
-    // no clue what was going on here
-    // let y = (c / a - f / d) / (b / a - e / d);
-    // let x = (c - b * y) / a;
-    // (x, y)
-
     let x = (b * f - e * c) / (b * d - e * a);
     let y = (c - a * x) / b;
     return (x, y);
@@ -176,6 +172,7 @@ pub fn point_sector_collision(
         .flatten()
 }
 
+/// This function never returns more than two collisions
 pub fn line_sector_collision(
     centre: Vector,
     radius: f32,
@@ -194,20 +191,20 @@ pub fn line_sector_collision(
         centre + Vector::from_polar(direction - fov / 2.0, radius),
         a,
         b,
-    )
-    .map(|x| vec![x])
-    .unwrap_or_else(|| vec![]);
+    );
 
     let line2 = line_line_collision(
         centre,
         centre + Vector::from_polar(direction + fov / 2.0, radius),
         a,
         b,
-    )
-    .map(|x| vec![x])
-    .unwrap_or_else(|| vec![]);
+    );
 
-    arc.chain(line1).chain(line2).collect()
+    if line1.is_some() && line2.is_some() {
+        vec![line1.unwrap(), line2.unwrap()]
+    } else {
+        arc.chain(line1).chain(line2).collect()
+    }
 }
 
 fn quadratic(a: f32, b: f32, c: f32) -> QuadraticSolution {

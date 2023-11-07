@@ -83,7 +83,6 @@ impl<T> UIElement<'_, T> {
     }
 }
 
-/// TODO: why is parent not just a &'a Menu?
 pub struct Button<'a, T> {
     parent: Rc<RefCell<Menu<'a, T>>>,
     position: Vector,
@@ -185,13 +184,8 @@ impl<'a, T> Menu<'a, T> {
         }
     }
 
-    /// There *must* be a better way
-    /// TODO: find a better way
     pub fn add_elements(&mut self, elements: Vec<UIElement<'a, T>>) {
-        self.elements.reserve(elements.len());
-        for element in elements {
-            self.elements.push(element);
-        }
+        self.elements.extend(elements.into_iter());
     }
 
     pub fn position(&self) -> Vector {
@@ -299,8 +293,6 @@ impl<T> Default for Menu<'_, T> {
     }
 }
 
-/// TODO: maybe use composition here?
-/// Actually no, that shuold be done now, not later
 pub struct DragButton<'a, T> {
     parent: Rc<RefCell<Menu<'a, T>>>,
     button: Button<'a, T>,
@@ -358,7 +350,6 @@ impl<'a, T> DragButton<'a, T> {
         }
     }
 
-    /// TODO: should this button keep track of the exact path which the mouse follows?
     pub fn input_moved(&mut self, position: Vector, movement: Vector, state: &mut T) {
         if let Some(start) = self.drag_start {
             let callback = self.moved_callback;

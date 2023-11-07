@@ -69,18 +69,9 @@ impl Range for CircularRange {
 
     fn line_intersection(&self, a: Vector, b: Vector) -> f32 {
         let collisions = line_circle_collision(self.position, self.radius, a, b);
-        match (
-            collisions,
-            point_circle_collision(self.position, self.radius, a).is_some(),
-            point_circle_collision(self.position, self.radius, b).is_some(),
-        ) {
-            (LineCircleCollision::None | LineCircleCollision::One(_), _, true)
-            | (LineCircleCollision::None | LineCircleCollision::One(_), true, _) => {
-                (a - b).length()
-            }
-            (LineCircleCollision::None, false, false) => 0.0,
-            (LineCircleCollision::One(_), false, false) => 0.0, // unreachable
-            (LineCircleCollision::Two(p1, p2), _, _) => (p1 - p2).length(),
+        match (collisions) {
+            LineCircleCollision::None | LineCircleCollision::One(_) => 0.0,
+            LineCircleCollision::Two(a, b) => (a - b).length(),
         }
     }
 }
@@ -128,22 +119,30 @@ impl Range for SectorRange {
     /// then the lines and the arc both return intersection points
     /// and there are more than 2
     fn line_intersection(&self, a: Vector, b: Vector) -> f32 {
-        let points =
-            line_sector_collision(self.position, self.radius, self.direction, self.fov, a, b);
-        let a_in_circle =
-            point_sector_collision(self.position, self.radius, self.direction, self.fov, a)
-                .is_some();
-        let b_in_circle =
-            point_sector_collision(self.position, self.radius, self.direction, self.fov, b)
-                .is_some();
+        // let points =
+        //     line_sector_collision(self.position, self.radius, self.direction, self.fov, a, b);
+        // let a_in_circle =
+        //     point_sector_collision(self.position, self.radius, self.direction, self.fov, a)
+        //         .is_some();
+        // let b_in_circle =
+        //     point_sector_collision(self.position, self.radius, self.direction, self.fov, b)
+        //         .is_some();
 
-        match (points.len(), a_in_circle, b_in_circle, a_in_circle || b_in_circle) {
-            (0, _, _, true) => (a-b).length(),
-            (0, _, _, false) => 0.0,
-            (1, true, _, _) => (points[0]-a).length(),
-            (1, _, true, _) => (points[0]-b).length(),
-            (2, _, _, _) => (points[0]-points[1]).length(),
-            _ => unreachable!("There can't be more than two intersection points between a line and a sector, but I got: {:#?}", &points)
+        // match (points.len(), a_in_circle, b_in_circle, a_in_circle || b_in_circle) {
+        //     (0, _, _, true) => (a-b).length(),
+        //     (0, _, _, false) => 0.0,
+        //     (1, true, _, _) => (points[0]-a).length(),
+        //     (1, _, true, _) => (points[0]-b).length(),
+        //     (2, _, _, _) => (points[0]-points[1]).length(),
+        //     _ => unreachable!("There can't be more than two intersection points between a line and a sector, but I got: {:#?}", &points)
+        // }
+        let collisions =
+            line_sector_collision(self.position, self.radius, self.direction, self.fov, a, b);
+        assert!(collisions.len() == 2);
+        match collisions.len() {
+            0 | 1 => 0.0,
+            2 => (collisions[0] - collisions[1]).length(),
+            _ => unreachable!("Line/Sector collision shouldn't return more than two points!"),
         }
     }
 }
@@ -306,10 +305,7 @@ impl<'t> Tower<'t> for SectorTower<'t> {
         enemies: Vec<Enemy<'a, Alive>>,
         bounds: Vector,
     ) -> Vec<Enemy<'a, Alive>> {
-        // TODO: lots of repetition here.
-        // can that be cut down?
         if self.time_to_next_shot == 0 {
-            // shoot!
             if let Some(enemy) = self.range.get_target(&enemies) {
                 self.bullets
                     .borrow_mut()

@@ -5,6 +5,7 @@ use ggez::{graphics::Color, Context};
 use crate::{
     pathfind::{Connection, NodeIndex, Pathfinder},
     renderer::{draw_circle, draw_line},
+    tower::Tower,
     vector::Vector,
 };
 
@@ -114,6 +115,7 @@ impl Web {
         connections: Vec<(usize, usize, f32)>,
         start: usize,
         end: usize,
+        towers: &[dyn Tower],
     ) -> Result<Self, WebCreationError> {
         let points: Vec<Rc<RefCell<Point>>> = positions
             .iter()

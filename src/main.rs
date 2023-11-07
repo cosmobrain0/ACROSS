@@ -91,6 +91,7 @@ impl<'a> GameState<'a> {
             .collect(),
             0,
             1,
+            &[],
         )
         .expect("Failed to build a path");
 
@@ -148,6 +149,7 @@ impl MainState {
                     if let Some((tower, price)) = spawn_tower(position, state.money) {
                         state.money -= price;
                         state.towers.push(tower);
+                        // TODO: rebuild web
                     }
                 },
                 "Drag!",
@@ -224,28 +226,26 @@ impl event::EventHandler<ggez::GameError> for MainState {
         match self.state.mode {
             GameMode::MainMenu => Ok(()),
             GameMode::Play => {
-                // let (lives_lost, enemies_killed) =
-                //     self.state
-                //         .round
-                //         .update(&self.state.path, &mut self.state.towers, size);
-                // self.state.lives = self.state.lives.saturating_sub(lives_lost);
-                // self.state.score = self.state.score.saturating_add(enemies_killed);
-                // self.state.money += enemies_killed * 2;
+                let (lives_lost, enemies_killed) =
+                    self.state
+                        .round
+                        .update(&self.state.path, &mut self.state.towers, size);
+                self.state.lives = self.state.lives.saturating_sub(lives_lost);
+                self.state.score = self.state.score.saturating_add(enemies_killed);
+                self.state.money += enemies_killed * 2;
 
-                // if self.state.lives == 0 {
-                //     // TODO: save score to file
-                //     // self.state.mode == GameMode::MainMenu;
-                //     // TODO: some error handling?
-                //     let save_data = SaveData::new(chrono::Utc::now(), self.state.score);
-                //     save_to_file("./save-file.csv".into(), save_data).unwrap();
-                //     self.score_list.push(save_data);
-                //     self.state = GameState::new();
-                //     return Ok(());
-                // }
+                if self.state.lives == 0 {
+                    // TODO: some error handling?
+                    let save_data = SaveData::new(chrono::Utc::now(), self.state.score);
+                    save_to_file("./save-file.csv".into(), save_data).unwrap();
+                    self.score_list.push(save_data);
+                    self.state = GameState::new();
+                    return Ok(());
+                }
 
-                // if self.state.round.complete() {
-                //     self.state.round.next();
-                // }
+                if self.state.round.complete() {
+                    self.state.round.next();
+                }
                 Ok(())
             }
         }
@@ -288,55 +288,34 @@ impl event::EventHandler<ggez::GameError> for MainState {
                 }
             }
             GameMode::Play => {
-                // self.state.path.draw(ctx);
-                // for enemy in self.state.round.enemies().iter() {
-                //     enemy.draw(ctx);
-                // }
-                // for bullet in self.state.round.bullets().iter() {
-                //     bullet.draw(ctx);
-                // }
-                // for tower in &self.state.towers {
-                //     tower.draw(ctx);
-                // }
-                // if let Some(position) = self.state.hover_position {
-                //     draw_circle(ctx, position, 10.0, Color::WHITE);
-                // }
-                // self.menu.borrow().draw(ctx);
-                // draw_text(
-                //     ctx,
-                //     format!(
-                //         "Lives: {lives}\nScore: {score}\nMoney: {money}",
-                //         lives = self.state.lives,
-                //         score = self.state.score,
-                //         money = self.state.money,
-                //     )
-                //     .as_str(),
-                //     vec2d![SCREEN_WIDTH as f32 - 250.0, 30.0],
-                //     None,
-                //     None,
-                //     Color::WHITE,
-                // );
-                if let Some(a) = self.t_point_a {
-                    if let Some(b) = self.t_point_b {
-                        draw_line(ctx, a, b, 3.0, Color::RED);
-                        draw_circle(ctx, a, 10.0, Color::WHITE);
-                        draw_circle(ctx, b, 10.0, Color::BLUE);
-                    }
+                self.state.path.draw(ctx);
+                for enemy in self.state.round.enemies().iter() {
+                    enemy.draw(ctx);
                 }
-                let centre = vec2d![SCREEN_WIDTH as f32, SCREEN_HEIGHT as f32] / 2.0;
-                let (direction, fov) = (0.0, PI / 2.0);
-                let (start_angle, end_angle) = (direction - fov / 2.0, direction + fov / 2.0);
-                let radius = 50.0;
-                let colour = self.t_point_a.is_some_and(|a| {
-                    self.t_point_b.is_some_and(|b| {
-                        line_sector_collision(centre, radius, direction, fov, a, b)
-                            .into_iter()
-                            .count()
-                            > 0
-                    })
-                });
-                let colour = if colour { Color::GREEN } else { Color::RED };
-                draw_sector(ctx, centre, radius, start_angle, end_angle, 100, colour);
+                for bullet in self.state.round.bullets().iter() {
+                    bullet.draw(ctx);
+                }
+                for tower in &self.state.towers {
+                    tower.draw(ctx);
+                }
+                if let Some(position) = self.state.hover_position {
+                    draw_circle(ctx, position, 10.0, Color::WHITE);
+                }
+                self.menu.borrow().draw(ctx);
+                draw_text(
+                    ctx,
+                    format!(
+                        "Lives: {lives}\nScore: {score}\nMoney: {money}",
+                        lives = self.state.lives,
+                        score = self.state.score,
+                        money = self.state.money,
+                    )
+                    .as_str(),
+                    vec2d![SCREEN_WIDTH as f32 - 250.0, 30.0],
+                    None,
+                    None,
+                    Color::WHITE,
+                );
             }
         }
 
@@ -365,8 +344,7 @@ impl event::EventHandler<ggez::GameError> for MainState {
                     vec![&mut self.main_menu]
                 }
                 GameMode::Play => {
-                    // vec![&mut self.menu] // maybe I cna do this with a slice?
-                    vec![]
+                    vec![&mut self.menu] // maybe I cna do this with a slice?
                 }
             }
             .into_iter()
