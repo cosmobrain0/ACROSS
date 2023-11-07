@@ -113,10 +113,10 @@ pub fn line_line_collision(a1: Vector, b1: Vector, a2: Vector, b2: Vector) -> Op
     let (param1, param2) = simultaneous_equations(
         direction1.x,
         -direction2.x,
-        point1.x - point2.x,
+        point2.x - point1.x,
         direction1.y,
         -direction2.y,
-        point1.y - point2.y,
+        point2.y - point1.y,
     );
     let collision = {
         let p1 = point1 + direction1 * param1;
@@ -140,9 +140,14 @@ pub fn line_line_collision(a1: Vector, b1: Vector, a2: Vector, b2: Vector) -> Op
 /// simultaneously. Probably panics if you give it something unsolveable?
 /// TODO: figure out when this panics/returns NaN and fix that
 fn simultaneous_equations(a: f32, b: f32, c: f32, d: f32, e: f32, f: f32) -> (f32, f32) {
-    let y = (c / a - f / d) / (b / a - e / d);
-    let x = (c - b * y) / a;
-    (x, y)
+    // no clue what was going on here
+    // let y = (c / a - f / d) / (b / a - e / d);
+    // let x = (c - b * y) / a;
+    // (x, y)
+
+    let x = (b * f - e * c) / (b * d - e * a);
+    let y = (c - a * x) / b;
+    return (x, y);
 }
 
 pub fn point_sector_collision(
@@ -174,6 +179,7 @@ pub fn line_sector_collision(
     let arc = line_circle_collision(centre, radius, a, b)
         .into_iter()
         .filter(|p| shortest_angle_distance((*p - centre).angle(), direction).abs() <= fov / 2.0);
+
     let line1 = line_line_collision(
         centre,
         centre + Vector::from_polar(direction - fov / 2.0, radius),
@@ -182,6 +188,7 @@ pub fn line_sector_collision(
     )
     .map(|x| vec![x])
     .unwrap_or_else(|| vec![]);
+
     let line2 = line_line_collision(
         centre,
         centre + Vector::from_polar(direction + fov / 2.0, radius),
@@ -190,6 +197,7 @@ pub fn line_sector_collision(
     )
     .map(|x| vec![x])
     .unwrap_or_else(|| vec![]);
+
     arc.chain(line1).chain(line2).collect()
 }
 

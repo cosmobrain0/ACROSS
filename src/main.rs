@@ -329,14 +329,14 @@ impl event::EventHandler<ggez::GameError> for MainState {
                 let radius = 50.0;
                 let colour = self.t_point_a.is_some_and(|a| {
                     self.t_point_b.is_some_and(|b| {
-                        line_circle_collision(centre, radius, a, b)
+                        line_sector_collision(centre, radius, direction, fov, a, b)
                             .into_iter()
                             .count()
                             > 0
                     })
                 });
                 let colour = if colour { Color::GREEN } else { Color::RED };
-                draw_circle(ctx, centre, radius, colour);
+                draw_sector(ctx, centre, radius, start_angle, end_angle, 100, colour);
             }
         }
 
