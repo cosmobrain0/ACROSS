@@ -91,36 +91,61 @@ pub struct Pathfinder {
     best_route: Option<Vec<Node>>,
 }
 impl Pathfinder {
-    pub fn new(nodes: &Vec<Vector>, connections: Vec<Connection>) -> Option<Self> {
+    /// This is *horrible* code
+    pub fn new(
+        nodes: &Vec<Vector>,
+        connections: &Vec<(usize, usize)>,
+        weight_calculation: impl Fn(Vector, Vector) -> f32,
+    ) -> Option<Self> {
         let mut final_connections = Vec::with_capacity(connections.len());
         if nodes.len() == 0
-            || connections.iter().any(
-                |Connection {
-                     start: NodeIndex(start),
-                     end: NodeIndex(end),
-                     weight: _,
-                 }| *start >= nodes.len() || *end >= nodes.len(),
-            )
+            || connections
+                .iter()
+                .any(|(start, end)| *start >= nodes.len() || *end >= nodes.len())
         {
             None
         } else {
             for potential_connection in connections.into_iter() {
                 if !final_connections
                     .iter()
-                    .any(|connection| *connection == potential_connection)
+                    .any(|connection: &(usize, usize, f32)| {
+                        (connection.0, connection.1) == *potential_connection
+                    })
                 {
-                    final_connections.push(potential_connection);
+                    let (a, b) = *potential_connection;
+                    final_connections.push((a, b, weight_calculation(nodes[a], nodes[b])));
                 }
             }
+            dbg!(&final_connections);
             Some(Self {
                 nodes: nodes
                     .into_iter()
                     .map(|position| Node::new(*position))
                     .collect(),
-                connections: final_connections,
+                connections: final_connections.into_iter().map(Into::into).collect(),
                 best_route: None,
             })
         }
+    }
+
+    pub fn recalculate_weights(&mut self, weight_calculation: impl Fn(Vector, Vector) -> f32) {
+        // TODO: this should really be a for loop I think
+        self.connections = self
+            .connections
+            .iter()
+            .map(|x| {
+                (
+                    x.start.0,
+                    x.end.0,
+                    weight_calculation(
+                        self.nodes[x.start.0].position,
+                        self.nodes[x.end.0].position,
+                    ),
+                )
+                    .into()
+            })
+            .collect();
+        self.best_route = None;
     }
 
     pub fn pathfind(&mut self, start: NodeIndex, end: NodeIndex) -> &Vec<Node> {

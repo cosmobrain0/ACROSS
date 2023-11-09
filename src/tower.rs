@@ -33,6 +33,11 @@ pub trait Tower<'t> {
     where
         Self: Sized;
     fn bullets(&self) -> &RefCell<Vec<Bullet<'t, Alive>>>;
+    /// Returns the length of the line segment from a to b
+    /// which can be seen by this tower
+    fn visible_area(&self, a: Vector, b: Vector) -> f32 {
+        self.range().line_intersection(a, b)
+    }
 }
 
 /// The view of a tower
@@ -119,23 +124,6 @@ impl Range for SectorRange {
     /// then the lines and the arc both return intersection points
     /// and there are more than 2
     fn line_intersection(&self, a: Vector, b: Vector) -> f32 {
-        // let points =
-        //     line_sector_collision(self.position, self.radius, self.direction, self.fov, a, b);
-        // let a_in_circle =
-        //     point_sector_collision(self.position, self.radius, self.direction, self.fov, a)
-        //         .is_some();
-        // let b_in_circle =
-        //     point_sector_collision(self.position, self.radius, self.direction, self.fov, b)
-        //         .is_some();
-
-        // match (points.len(), a_in_circle, b_in_circle, a_in_circle || b_in_circle) {
-        //     (0, _, _, true) => (a-b).length(),
-        //     (0, _, _, false) => 0.0,
-        //     (1, true, _, _) => (points[0]-a).length(),
-        //     (1, _, true, _) => (points[0]-b).length(),
-        //     (2, _, _, _) => (points[0]-points[1]).length(),
-        //     _ => unreachable!("There can't be more than two intersection points between a line and a sector, but I got: {:#?}", &points)
-        // }
         let collisions =
             line_sector_collision(self.position, self.radius, self.direction, self.fov, a, b);
         assert!(collisions.len() == 2);

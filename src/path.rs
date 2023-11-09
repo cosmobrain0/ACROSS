@@ -102,6 +102,10 @@ impl Route {
 /// Oh wait it's fine
 /// Because routes are independent of the web anyway
 /// Because that was a great idea too, wasn't it?
+/// OK I'm gonna make a new web anyway
+/// because a web is defined as having a pathfinder,
+/// And pathfinders are constructed from constant routes
+/// So most of the work would have to be redone anyway.
 #[derive(Debug)]
 pub struct Web {
     points: Vec<Rc<RefCell<Point>>>,
@@ -112,25 +116,22 @@ pub struct Web {
 impl Web {
     pub fn new(
         positions: Vec<Vector>,
-        connections: Vec<(usize, usize, f32)>,
+        connections: Vec<(usize, usize)>,
         start: usize,
         end: usize,
-        towers: &[&dyn Tower],
+        weight_calculation: impl Fn(Vector, Vector) -> f32,
     ) -> Result<Self, WebCreationError> {
         let points: Vec<Rc<RefCell<Point>>> = positions
             .iter()
             .map(|&x| Rc::new(RefCell::new(Point::new(x))))
             .collect();
-        for &(a, b, _) in connections.iter() {
+        for &(a, b) in connections.iter() {
             points[a]
                 .borrow_mut()
                 .add_connections(&vec![Rc::clone(&points[b])])
         }
 
-        let pathfinder = Pathfinder::new(
-            &positions,
-            connections.iter().cloned().map(Into::into).collect(),
-        );
+        let pathfinder = Pathfinder::new(&positions, &connections, weight_calculation);
 
         if start >= positions.len() || end >= positions.len() {
             return Err(WebCreationError::InvalidEndpoints);
@@ -176,6 +177,10 @@ impl Web {
 
     pub fn route(&self) -> Vec<Vector> {
         self.pathfinder.best_route().unwrap()
+    }
+
+    pub fn recalculate_weights(&mut self, weight_calculation: impl Fn(Vector, Vector) -> f32) {
+        self.pathfinder.recalculate_weights(weight_calculation);
     }
 }
 

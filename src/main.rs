@@ -85,13 +85,12 @@ impl<'a> GameState<'a> {
                 (4, 3),
             ]
             .into_iter()
-            .map(|(a, b)| (a, b, 0.0))
-            .map(|(a, b, weight)| [(a, b, weight), (b, a, weight)])
+            .map(|(a, b)| [(a, b), (b, a)])
             .flatten()
             .collect(),
             0,
             1,
-            &[],
+            |a, b| (a - b).length(),
         )
         .expect("Failed to build a path");
 
@@ -150,6 +149,14 @@ impl MainState {
                         state.money -= price;
                         state.towers.push(tower);
                         // TODO: rebuild web
+                        state.path.recalculate_weights(|a, b| {
+                            (a - b).length()
+                                + state
+                                    .towers
+                                    .iter()
+                                    .map(|tower| tower.visible_area(a, b))
+                                    .sum::<f32>()
+                        })
                     }
                 },
                 "Drag!",
@@ -288,58 +295,59 @@ impl event::EventHandler<ggez::GameError> for MainState {
                 }
             }
             GameMode::Play => {
-                // self.state.path.draw(ctx);
-                // for enemy in self.state.round.enemies().iter() {
-                //     enemy.draw(ctx);
-                // }
-                // for bullet in self.state.round.bullets().iter() {
-                //     bullet.draw(ctx);
-                // }
-                // for tower in &self.state.towers {
-                //     tower.draw(ctx);
-                // }
-                // if let Some(position) = self.state.hover_position {
-                //     draw_circle(ctx, position, 10.0, Color::WHITE);
-                // }
-                // self.menu.borrow().draw(ctx);
-                // draw_text(
-                //     ctx,
-                //     format!(
-                //         "Lives: {lives}\nScore: {score}\nMoney: {money}",
-                //         lives = self.state.lives,
-                //         score = self.state.score,
-                //         money = self.state.money,
-                //     )
-                //     .as_str(),
-                //     vec2d![SCREEN_WIDTH as f32 - 250.0, 30.0],
-                //     None,
-                //     None,
-                //     Color::WHITE,
-                // );
-                let radius = 50.0;
-                let position = vec2d![SCREEN_WIDTH as f32, SCREEN_HEIGHT as f32] / 2.0;
-                let (direction, fov) = (0.0, PI / 2.0);
-                let (start_angle, end_angle) = (direction - fov / 2.0, direction + fov / 2.0);
-
-                draw_sector(
+                self.state.path.draw(ctx);
+                for enemy in self.state.round.enemies().iter() {
+                    enemy.draw(ctx);
+                }
+                for bullet in self.state.round.bullets().iter() {
+                    bullet.draw(ctx);
+                }
+                for tower in &self.state.towers {
+                    tower.draw(ctx);
+                }
+                if let Some(position) = self.state.hover_position {
+                    draw_circle(ctx, position, 10.0, Color::WHITE);
+                }
+                self.menu.borrow().draw(ctx);
+                draw_text(
                     ctx,
-                    position,
-                    radius,
-                    start_angle,
-                    end_angle,
-                    100,
-                    Color::RED,
+                    format!(
+                        "Lives: {lives}\nScore: {score}\nMoney: {money}",
+                        lives = self.state.lives,
+                        score = self.state.score,
+                        money = self.state.money,
+                    )
+                    .as_str(),
+                    vec2d![SCREEN_WIDTH as f32 - 250.0, 30.0],
+                    None,
+                    None,
+                    Color::WHITE,
                 );
 
-                if let Some(a) = self.t_point_a {
-                    if let Some(b) = self.t_point_b {
-                        draw_line(ctx, a, b, 3.0, Color::GREEN);
-                        let points = line_sector_collision(position, radius, direction, fov, a, b);
-                        for point in points {
-                            draw_circle(ctx, point, 10.0, Color::WHITE);
-                        }
-                    }
-                }
+                // let radius = 50.0;
+                // let position = vec2d![SCREEN_WIDTH as f32, SCREEN_HEIGHT as f32] / 2.0;
+                // let (direction, fov) = (0.0, PI / 2.0);
+                // let (start_angle, end_angle) = (direction - fov / 2.0, direction + fov / 2.0);
+
+                // draw_sector(
+                //     ctx,
+                //     position,
+                //     radius,
+                //     start_angle,
+                //     end_angle,
+                //     100,
+                //     Color::RED,
+                // );
+
+                // if let Some(a) = self.t_point_a {
+                //     if let Some(b) = self.t_point_b {
+                //         draw_line(ctx, a, b, 3.0, Color::GREEN);
+                //         let points = line_sector_collision(position, radius, direction, fov, a, b);
+                //         for point in points {
+                //             draw_circle(ctx, point, 10.0, Color::WHITE);
+                //         }
+                //     }
+                // }
             }
         }
 
