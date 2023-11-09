@@ -48,7 +48,7 @@ pub fn line_circle_collision(
     a: Vector,
     b: Vector,
 ) -> LineCircleCollision {
-    let mut collisions = Vec::with_capacity(3);
+    let mut collisions = Vec::with_capacity(2);
     for endpoint in [a, b] {
         if point_circle_collision(centre, radius, endpoint).is_some() {
             collisions.push(endpoint);

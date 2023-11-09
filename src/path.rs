@@ -115,7 +115,7 @@ impl Web {
         connections: Vec<(usize, usize, f32)>,
         start: usize,
         end: usize,
-        towers: &[dyn Tower],
+        towers: &[&dyn Tower],
     ) -> Result<Self, WebCreationError> {
         let points: Vec<Rc<RefCell<Point>>> = positions
             .iter()

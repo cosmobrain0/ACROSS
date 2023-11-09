@@ -288,34 +288,48 @@ impl event::EventHandler<ggez::GameError> for MainState {
                 }
             }
             GameMode::Play => {
-                self.state.path.draw(ctx);
-                for enemy in self.state.round.enemies().iter() {
-                    enemy.draw(ctx);
+                // self.state.path.draw(ctx);
+                // for enemy in self.state.round.enemies().iter() {
+                //     enemy.draw(ctx);
+                // }
+                // for bullet in self.state.round.bullets().iter() {
+                //     bullet.draw(ctx);
+                // }
+                // for tower in &self.state.towers {
+                //     tower.draw(ctx);
+                // }
+                // if let Some(position) = self.state.hover_position {
+                //     draw_circle(ctx, position, 10.0, Color::WHITE);
+                // }
+                // self.menu.borrow().draw(ctx);
+                // draw_text(
+                //     ctx,
+                //     format!(
+                //         "Lives: {lives}\nScore: {score}\nMoney: {money}",
+                //         lives = self.state.lives,
+                //         score = self.state.score,
+                //         money = self.state.money,
+                //     )
+                //     .as_str(),
+                //     vec2d![SCREEN_WIDTH as f32 - 250.0, 30.0],
+                //     None,
+                //     None,
+                //     Color::WHITE,
+                // );
+                let radius = 50.0;
+                let position = vec2d![SCREEN_WIDTH as f32, SCREEN_HEIGHT as f32] / 2.0;
+
+                draw_circle(ctx, position, radius, Color::RED);
+
+                if let Some(a) = self.t_point_a {
+                    if let Some(b) = self.t_point_b {
+                        draw_line(ctx, a, b, 3.0, Color::GREEN);
+                        let points = line_circle_collision(position, radius, a, b);
+                        for point in points {
+                            draw_circle(ctx, point, 10.0, Color::WHITE);
+                        }
+                    }
                 }
-                for bullet in self.state.round.bullets().iter() {
-                    bullet.draw(ctx);
-                }
-                for tower in &self.state.towers {
-                    tower.draw(ctx);
-                }
-                if let Some(position) = self.state.hover_position {
-                    draw_circle(ctx, position, 10.0, Color::WHITE);
-                }
-                self.menu.borrow().draw(ctx);
-                draw_text(
-                    ctx,
-                    format!(
-                        "Lives: {lives}\nScore: {score}\nMoney: {money}",
-                        lives = self.state.lives,
-                        score = self.state.score,
-                        money = self.state.money,
-                    )
-                    .as_str(),
-                    vec2d![SCREEN_WIDTH as f32 - 250.0, 30.0],
-                    None,
-                    None,
-                    Color::WHITE,
-                );
             }
         }
 
