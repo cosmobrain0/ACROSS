@@ -126,7 +126,7 @@ impl Range for SectorRange {
     fn line_intersection(&self, a: Vector, b: Vector) -> f32 {
         let collisions =
             line_sector_collision(self.position, self.radius, self.direction, self.fov, a, b);
-        assert!(collisions.len() == 2);
+        assert!(collisions.len() <= 2);
         match collisions.len() {
             0 | 1 => 0.0,
             2 => (collisions[0] - collisions[1]).length(),
@@ -281,7 +281,7 @@ impl<'t> Tower<'t> for SectorTower<'t> {
     where
         Self: Sized,
     {
-        20
+        2
     }
 
     fn time_until_shot(&self) -> f32 {

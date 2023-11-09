@@ -52,9 +52,6 @@ pub fn load_from_file(path: PathBuf) -> Result<Vec<SaveData>, Box<dyn Error>> {
                 None
             }
         })
-        .inspect(|x| {
-            dbg!(&x);
-        })
         .map(|(date, score)| (DateTime::parse_from_rfc3339(date), score.parse::<usize>()))
         .filter(|(date, score)| date.is_ok() && score.is_ok())
         .map(|(date, score)| (date.unwrap(), score.unwrap()))

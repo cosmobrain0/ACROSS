@@ -71,7 +71,7 @@ impl<'a> GameState<'a> {
                 vec2d![700.0, 100.0],
                 vec2d![350.0, 200.0],
                 vec2d![1000.0, 1000.0],
-                vec2d![370.0, 800.0],
+                vec2d![370.0, 300.0],
             ],
             vec![
                 // (0, 1),
@@ -151,12 +151,14 @@ impl MainState {
                         // TODO: rebuild web
                         state.path.recalculate_weights(|a, b| {
                             (a - b).length()
-                                + state
+                                + dbg!(state
                                     .towers
                                     .iter()
                                     .map(|tower| tower.visible_area(a, b))
-                                    .sum::<f32>()
-                        })
+                                    .sum::<f32>())
+                                    * 100.0
+                        });
+                        state.path.pathfind(); // TODO: extract these into constants
                     }
                 },
                 "Drag!",

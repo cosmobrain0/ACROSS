@@ -53,9 +53,20 @@ impl Node {
 
     /// # Panics
     /// Panics if the parent node does not have a g_cost
-    fn set_g_cost(&mut self, parent: &Node, parent_index: NodeIndex) {
+    fn set_g_cost(
+        &mut self,
+        parent: &Node,
+        parent_index: NodeIndex,
+        this_index: NodeIndex,
+        connections: &Vec<Connection>,
+    ) {
         self.parent = Some(parent_index);
-        self.g_cost = Some(parent.g_cost.unwrap() + (parent.position - self.position).length());
+        let weight = connections
+            .iter()
+            .find(|x| x.start == parent_index && x.end == this_index)
+            .unwrap()
+            .weight;
+        self.g_cost = Some(parent.g_cost.unwrap() + weight);
     }
 
     pub fn position(&self) -> Vector {
@@ -116,7 +127,6 @@ impl Pathfinder {
                     final_connections.push((a, b, weight_calculation(nodes[a], nodes[b])));
                 }
             }
-            dbg!(&final_connections);
             Some(Self {
                 nodes: nodes
                     .into_iter()
@@ -201,7 +211,12 @@ impl Pathfinder {
                         || !neighbour_in_open
                     {
                         let parent = self.nodes[current.0].clone();
-                        self.nodes[neighbour.0].set_g_cost(&parent, current_index.1);
+                        self.nodes[neighbour.0].set_g_cost(
+                            &parent,
+                            current_index.1,
+                            neighbour,
+                            &self.connections,
+                        );
                         if !neighbour_in_open {
                             self.nodes[neighbour.0].h_cost_calculate(&target);
                             open.push(neighbour);

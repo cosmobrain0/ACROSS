@@ -153,6 +153,10 @@ impl Web {
         }
     }
 
+    pub fn pathfind(&mut self) {
+        self.pathfinder.pathfind(self.start, self.end);
+    }
+
     pub fn draw(&self, ctx: &mut Context) {
         self.points.iter().for_each(|x| {
             x.borrow().connections.iter().for_each(|y| {
