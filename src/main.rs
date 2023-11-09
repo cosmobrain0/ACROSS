@@ -318,13 +318,23 @@ impl event::EventHandler<ggez::GameError> for MainState {
                 // );
                 let radius = 50.0;
                 let position = vec2d![SCREEN_WIDTH as f32, SCREEN_HEIGHT as f32] / 2.0;
+                let (direction, fov) = (0.0, PI / 2.0);
+                let (start_angle, end_angle) = (direction - fov / 2.0, direction + fov / 2.0);
 
-                draw_circle(ctx, position, radius, Color::RED);
+                draw_sector(
+                    ctx,
+                    position,
+                    radius,
+                    start_angle,
+                    end_angle,
+                    100,
+                    Color::RED,
+                );
 
                 if let Some(a) = self.t_point_a {
                     if let Some(b) = self.t_point_b {
                         draw_line(ctx, a, b, 3.0, Color::GREEN);
-                        let points = line_circle_collision(position, radius, a, b);
+                        let points = line_sector_collision(position, radius, direction, fov, a, b);
                         for point in points {
                             draw_circle(ctx, point, 10.0, Color::WHITE);
                         }
