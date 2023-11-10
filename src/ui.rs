@@ -141,7 +141,7 @@ impl<'a, T> Button<'a, T> {
             ctx,
             vec2d!(self.x(), self.y()),
             vec2d!(self.width(), self.height()),
-            Color::BLUE,
+            Color::from_rgb(200, 200, 200),
         );
 
         draw_text(

@@ -188,7 +188,7 @@ impl<'t> Tower<'t> for TestTower<'t> {
     where
         Self: Sized,
     {
-        10
+        40
     }
 
     fn update<'b>(
@@ -201,7 +201,11 @@ impl<'t> Tower<'t> for TestTower<'t> {
             if let Some(enemy) = self.range.get_target(&enemies) {
                 self.bullets
                     .borrow_mut()
-                    .push(Bullet::new(Projectile::spawn(self, enemy.position())));
+                    .push(Bullet::new(Projectile::spawn(
+                        self,
+                        enemy.position(),
+                        enemy.velocity(),
+                    )));
                 self.time_to_next_shot = TestTower::cooldown();
             }
         } else {
@@ -225,8 +229,11 @@ impl<'t> Tower<'t> for TestTower<'t> {
         );
     }
 
-    fn spawn(position: Vector) -> Box<dyn Tower<'t> + 't> {
-        Box::new(Self::new(vec2d![position.x, position.y])) as Box<dyn Tower + 't>
+    fn spawn(position: Vector) -> Box<dyn Tower<'t> + 't>
+    where
+        Self: Sized,
+    {
+        Box::new(Self::new(position)) as Box<dyn Tower + 't>
     }
 
     fn time_until_shot(&self) -> f32 {
@@ -281,7 +288,7 @@ impl<'t> Tower<'t> for SectorTower<'t> {
     where
         Self: Sized,
     {
-        2
+        15
     }
 
     fn time_until_shot(&self) -> f32 {
@@ -297,7 +304,11 @@ impl<'t> Tower<'t> for SectorTower<'t> {
             if let Some(enemy) = self.range.get_target(&enemies) {
                 self.bullets
                     .borrow_mut()
-                    .push(Bullet::new(Projectile::spawn(self, enemy.position())));
+                    .push(Bullet::new(Projectile::spawn(
+                        self,
+                        enemy.position(),
+                        enemy.velocity(),
+                    )));
                 self.time_to_next_shot = Self::cooldown();
             }
         } else {
@@ -343,4 +354,31 @@ impl<'t> Tower<'t> for SectorTower<'t> {
     fn bullets(&self) -> &RefCell<Vec<Bullet<'t, Alive>>> {
         &self.bullets
     }
+}
+
+pub fn aim_towards(
+    start: Vector,
+    target_position: Vector,
+    target_velocity: Vector,
+    projectile_speed: f32,
+) -> Vector {
+    // sin(alpha)/kd_E = sin(theta)/d_E
+    let k = projectile_speed / target_velocity.length();
+    let alpha = PI - (target_position - start).angle_between(target_velocity);
+    let sin_theta = (alpha.sin() / k).asin();
+
+    // o^2 = x^2(1 + k^2 - 2kcos(theta))
+    // o^2 / x^2 > 0, 1 + k^2 - 2kcos(theta) > 0
+    // (1+k^2)/2k > cos(theta)
+    let cos_theta = 1.0 - sin_theta * sin_theta;
+    let cos_theta = [cos_theta.sqrt(), -cos_theta.sqrt()]
+        .into_iter()
+        .filter(|&cos_theta| cos_theta < (1.0 + k * k) / (2.0 * k));
+
+    cos_theta
+        .map(|cos_theta| vec2d![cos_theta, sin_theta] * projectile_speed)
+        .map(|velocity| velocity.rotate(-velocity.angle() * 2.0)) // why????
+        .map(|velocity| velocity.rotate((target_position - start).angle()))
+        .next()
+        .expect("Some valid solutions")
 }

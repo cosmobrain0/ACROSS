@@ -1,12 +1,20 @@
 use ggez::{graphics::Color, Context};
 
 use crate::{
-    enemy::Enemy, renderer::draw_circle, tower::Tower, vector::Vector, Alive, Dead, Updated,
+    enemy::Enemy,
+    renderer::draw_circle,
+    tower::{aim_towards, Tower},
+    vector::Vector,
+    Alive, Dead, Updated,
 };
 
 pub trait BulletTrait<'a>: std::fmt::Debug {
     /// create a new bullet
-    fn spawn(tower: &impl Tower<'a>, target: Vector) -> Box<dyn BulletTrait<'a> + 'a>
+    fn spawn(
+        tower: &impl Tower<'a>,
+        target: Vector,
+        target_velocity: Vector,
+    ) -> Box<dyn BulletTrait<'a> + 'a>
     where
         Self: Sized;
     fn tower(&self) -> &'a dyn Tower;
@@ -84,13 +92,18 @@ pub struct Projectile {
 }
 
 impl<'a> BulletTrait<'a> for Projectile {
-    fn spawn(tower: &impl Tower<'a>, target: Vector) -> Box<dyn BulletTrait<'a> + 'a>
+    fn spawn(
+        tower: &impl Tower<'a>,
+        target: Vector,
+        target_velocity: Vector,
+    ) -> Box<dyn BulletTrait<'a> + 'a>
     where
         Self: Sized,
     {
         Box::new(Self {
             position: tower.position(),
-            velocity: (target - tower.position()).normalised() * 3.0,
+            // velocity: (target - tower.position()).normalised() * 3.0,
+            velocity: aim_towards(tower.position(), target, target_velocity, 3.0),
             radius: 5.0,
         }) as Box<dyn BulletTrait<'a> + 'a>
     }

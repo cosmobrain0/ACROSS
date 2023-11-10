@@ -27,7 +27,7 @@ use ggez::{Context, GameResult};
 
 use path::{Route, Web};
 use renderer::{draw_circle, draw_line, draw_sector, draw_text};
-use tower::{spawn_tower, Tower};
+use tower::{spawn_tower, SectorTower, TestTower, Tower};
 use ui::{Button, DragButton, Menu};
 use vector::*;
 
@@ -132,38 +132,46 @@ pub fn mouse_position(ctx: &mut Context) -> Vector {
     ]
 }
 
+macro_rules! tower_button {
+    ($position:expr, $tower:ident $name:literal $menu:ident) => {
+        DragButton::new(
+            $position,
+            vec2d![100.0, 75.0],
+            Rc::clone(&$menu),
+            |start, state: &mut GameState| state.hover_position = Some(start),
+            |_start, position, _movement, state| state.hover_position = Some(position),
+            |_start, position, state| {
+                state.hover_position = None;
+                let price = $tower::price();
+                if price <= state.money {
+                    state.money -= price;
+                    state.towers.push($tower::spawn(position));
+                    // TODO: rebuild web
+                    state.path.recalculate_weights(|a, b| {
+                        (a - b).length()
+                            + state
+                                .towers
+                                .iter()
+                                .map(|tower| tower.visible_area(a, b))
+                                .sum::<f32>()
+                                * 5.0
+                    });
+                    // TODO: extract these into constants
+                    state.path.pathfind();
+                }
+            },
+            $name,
+        )
+    };
+}
+
 impl MainState {
     fn new(ctx: &mut Context) -> GameResult<MainState> {
         let menu: Rc<RefCell<Menu<GameState>>> =
             Rc::new(RefCell::new(Menu::new(vec2d!(0.0, 0.0), 1.0, None)));
         let buttons = vec![
-            DragButton::new(
-                vec2d![0.0, 300.0],
-                vec2d![75.0, 75.0],
-                Rc::clone(&menu),
-                |start, state| state.hover_position = Some(start),
-                |_start, position, _movement, state| state.hover_position = Some(position),
-                |_start, position, state| {
-                    state.hover_position = None;
-                    if let Some((tower, price)) = spawn_tower(position, state.money) {
-                        state.money -= price;
-                        state.towers.push(tower);
-                        // TODO: rebuild web
-                        state.path.recalculate_weights(|a, b| {
-                            (a - b).length()
-                                + state
-                                    .towers
-                                    .iter()
-                                    .map(|tower| tower.visible_area(a, b))
-                                    .sum::<f32>()
-                                    * 5.0
-                        });
-                        state.path.pathfind(); // TODO: extract these into constants
-                    }
-                },
-                "Drag!",
-            )
-            .into(),
+            tower_button![vec2d![10.0, 100.0], SectorTower "Sector" menu].into(),
+            tower_button![vec2d![10.0, 200.0], TestTower "Test" menu].into(),
             Button::new(
                 vec2d![0.0, 0.0],
                 vec2d![100.0, 80.0],

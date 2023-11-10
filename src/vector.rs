@@ -95,6 +95,10 @@ impl Vector {
     pub fn max(&self, other: Vector) -> Vector {
         vec2d!(self.x.max(other.x), self.y.max(other.y))
     }
+
+    pub fn angle_between(&self, other: Vector) -> f32 {
+        (self.dot(other) / (self.length() * other.length())).acos()
+    }
 }
 
 impl Add for Vector {
