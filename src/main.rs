@@ -154,6 +154,7 @@ macro_rules! tower_button {
                     state
                         .towers
                         .push($tower::spawn(position, state.tower_placement_direction));
+                    state.tower_placement_direction = 0.0;
                     // TODO: rebuild web
                     state.path.recalculate_weights(|a, b| {
                         (a - b).length()
@@ -323,6 +324,13 @@ impl event::EventHandler<ggez::GameError> for MainState {
                 }
                 if let Some(position) = self.state.hover_position {
                     draw_circle(ctx, position, 10.0, Color::WHITE);
+                    draw_line(
+                        ctx,
+                        position,
+                        position + Vector::from_polar(self.state.tower_placement_direction, 80.0),
+                        3.0,
+                        Color::RED,
+                    );
                 }
                 self.menu.borrow().draw(ctx);
                 draw_text(
