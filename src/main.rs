@@ -455,7 +455,7 @@ impl event::EventHandler<ggez::GameError> for MainState {
             event::KeyCode::A => {
                 self.state.tower_placement_direction -= TOWER_PLACEMENT_DIRECTION_CHANGE_SPEED;
             }
-            event::KeyCode::B => {
+            event::KeyCode::D => {
                 self.state.tower_placement_direction += TOWER_PLACEMENT_DIRECTION_CHANGE_SPEED;
             }
             _ => {
