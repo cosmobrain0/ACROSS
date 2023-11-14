@@ -95,7 +95,6 @@ pub trait EnemyTrait<'a>: std::fmt::Debug {
     }
     /// Get the velocity of theenemy
     fn velocity(&self) -> Vector {
-        // TODO: extract this to soemthing
         self.route().get_position(self.progress() + 0.0012).unwrap() - self.position()
     }
     /// Check if this collides with another circle

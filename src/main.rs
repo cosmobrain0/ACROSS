@@ -155,7 +155,6 @@ macro_rules! tower_button {
                         .towers
                         .push($tower::spawn(position, state.tower_placement_direction));
                     state.tower_placement_direction = 0.0;
-                    // TODO: rebuild web
                     state.path.recalculate_weights(|a, b| {
                         (a - b).length()
                             + state

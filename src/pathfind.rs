@@ -139,22 +139,12 @@ impl Pathfinder {
     }
 
     pub fn recalculate_weights(&mut self, weight_calculation: impl Fn(Vector, Vector) -> f32) {
-        // TODO: this should really be a for loop I think
-        self.connections = self
-            .connections
-            .iter()
-            .map(|x| {
-                (
-                    x.start.0,
-                    x.end.0,
-                    weight_calculation(
-                        self.nodes[x.start.0].position,
-                        self.nodes[x.end.0].position,
-                    ),
-                )
-                    .into()
-            })
-            .collect();
+        for connection in &mut self.connections {
+            connection.weight = weight_calculation(
+                self.nodes[connection.start.0].position,
+                self.nodes[connection.end.0].position,
+            );
+        }
         self.best_route = None;
     }
 
