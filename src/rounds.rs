@@ -13,7 +13,6 @@ pub struct Round<'a> {
     round_number: usize,
     time_to_next_shot: usize,
     enemies: RefCell<Vec<Enemy<'a, Alive>>>,
-    bullets: RefCell<Vec<Bullet<'a, Alive>>>,
 }
 
 impl<'a> Round<'a> {
@@ -23,7 +22,6 @@ impl<'a> Round<'a> {
             round_number,
             time_to_next_shot: Self::time_between_enemies(round_number),
             enemies: RefCell::new(vec![]),
-            bullets: RefCell::new(vec![]),
         }
     }
 
@@ -33,7 +31,7 @@ impl<'a> Round<'a> {
 
     /// maybe just make this take &self?
     pub fn time_between_enemies(round_number: usize) -> usize {
-        60 * round_number
+        120 / (round_number + 1)
     }
 
     pub fn update(
@@ -56,23 +54,24 @@ impl<'a> Round<'a> {
         }
 
         let initial_enemies = self.enemies.borrow().len();
-        let enemies = Enemy::update_all(self.enemies.replace(Vec::new()));
-        let enemies_after_movement = enemies.len();
-        self.enemies.replace(enemies);
+        self.enemies
+            .replace(Enemy::update_all(self.enemies.replace(Vec::new())));
+        let enemies_after_movement = self.enemies.borrow().len();
 
         // does this do nothing?
-        let (bullets, mut enemies) = Bullet::update_all(
-            self.bullets.replace(Vec::new()),
-            self.enemies.replace(Vec::new()),
-            vec2d![size.0, size.1],
-        );
+        // let (bullets, mut enemies) = Bullet::update_all(
+        //     self.bullets.replace(Vec::new()),
+        //     self.enemies.replace(Vec::new()),
+        //     vec2d![size.0, size.1],
+        // );
 
         for tower in towers.iter_mut() {
-            enemies = tower.update(enemies, vec2d![SCREEN_WIDTH as f32, SCREEN_HEIGHT as f32]);
+            self.enemies.replace(tower.update(
+                self.enemies.replace(vec![]),
+                vec2d![SCREEN_WIDTH as f32, SCREEN_HEIGHT as f32],
+            ));
         }
-        let enemies_after_shooting = enemies.len();
-        self.bullets.replace(bullets);
-        self.enemies.replace(enemies);
+        let enemies_after_shooting = self.enemies.borrow().len();
 
         let lives_lost = initial_enemies - enemies_after_movement;
         let enemies_killed = enemies_after_movement - enemies_after_shooting;
@@ -81,10 +80,6 @@ impl<'a> Round<'a> {
 
     pub fn enemies<'b>(&'b self) -> core::cell::Ref<'b, Vec<Enemy<'a, Alive>>> {
         self.enemies.borrow()
-    }
-
-    pub fn bullets<'b>(&'b self) -> core::cell::Ref<'b, Vec<Bullet<'a, Alive>>> {
-        self.bullets.borrow()
     }
 
     pub fn complete(&self) -> bool {
