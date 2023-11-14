@@ -29,7 +29,7 @@ pub trait Tower<'t> {
     fn position(&self) -> Vector;
     fn radius(&self) -> f32;
     fn range(&self) -> &dyn Range;
-    fn spawn(bounds: Vector) -> Box<dyn Tower<'t> + 't>
+    fn spawn(position: Vector, direction: f32) -> Box<dyn Tower<'t> + 't>
     where
         Self: Sized;
     fn bullets(&self) -> &RefCell<Vec<Bullet<'t, Alive>>>;
@@ -149,14 +149,14 @@ pub fn shortest_angle_distance(theta1: f32, theta2: f32) -> f32 {
     }) * (theta2 - theta1).signum()
 }
 
-pub fn spawn_tower<'a>(position: Vector, money: usize) -> Option<(Box<dyn Tower<'a> + 'a>, usize)> {
-    let price = SectorTower::price() as usize;
-    if price <= money {
-        Some((SectorTower::spawn(position), price))
-    } else {
-        None
-    }
-}
+// pub fn spawn_tower<'a>(position: Vector, money: usize) -> Option<(Box<dyn Tower<'a> + 'a>, usize)> {
+//     let price = SectorTower::price() as usize;
+//     if price <= money {
+//         Some((SectorTower::spawn(position, ), price))
+//     } else {
+//         None
+//     }
+// }
 
 pub struct TestTower<'t> {
     time_to_next_shot: usize,
@@ -229,7 +229,7 @@ impl<'t> Tower<'t> for TestTower<'t> {
         );
     }
 
-    fn spawn(position: Vector) -> Box<dyn Tower<'t> + 't>
+    fn spawn(position: Vector, _direction: f32) -> Box<dyn Tower<'t> + 't>
     where
         Self: Sized,
     {
@@ -269,7 +269,7 @@ impl<'t> SectorTower<'t> {
         20
     }
 
-    pub fn new(position: Vector) -> Self {
+    pub fn new(position: Vector, direction: f32) -> Self {
         Self {
             time_to_next_shot: Self::cooldown(),
             position,
@@ -277,7 +277,7 @@ impl<'t> SectorTower<'t> {
             range: SectorRange {
                 position,
                 radius: 200.0,
-                direction: PI / 2.0,
+                direction,
                 fov: PI / 2.0,
             },
         }
@@ -344,11 +344,11 @@ impl<'t> Tower<'t> for SectorTower<'t> {
         &self.range as &dyn Range
     }
 
-    fn spawn(position: Vector) -> Box<dyn Tower<'t> + 't>
+    fn spawn(position: Vector, direction: f32) -> Box<dyn Tower<'t> + 't>
     where
         Self: Sized,
     {
-        Box::new(SectorTower::new(position)) as Box<dyn Tower<'t> + 't>
+        Box::new(SectorTower::new(position, direction)) as Box<dyn Tower<'t> + 't>
     }
 
     fn bullets(&self) -> &RefCell<Vec<Bullet<'t, Alive>>> {

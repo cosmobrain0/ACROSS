@@ -27,7 +27,7 @@ use ggez::{Context, GameResult};
 
 use path::{Route, Web};
 use renderer::{draw_circle, draw_line, draw_sector, draw_text};
-use tower::{spawn_tower, SectorTower, TestTower, Tower};
+use tower::{SectorTower, TestTower, Tower};
 use ui::{Button, DragButton, Menu};
 use vector::*;
 
@@ -61,6 +61,8 @@ pub struct GameState<'a> {
     lives: usize,
     score: usize,
     money: usize,
+    /// this is **not** good but it works
+    tower_placement_direction: f32,
 }
 
 impl<'a> GameState<'a> {
@@ -103,6 +105,7 @@ impl<'a> GameState<'a> {
             lives: STARTING_LIVES,
             score: 0,
             money: 30,
+            tower_placement_direction: 0.0,
         }
     }
 }
@@ -119,8 +122,6 @@ pub struct MainState {
     main_menu: Rc<RefCell<Menu<'static, GameState<'static>>>>,
     state: GameState<'static>,
     score_list: Vec<SaveData>,
-    t_point_a: Option<Vector>,
-    t_point_b: Option<Vector>,
 }
 
 pub fn mouse_position(ctx: &mut Context) -> Vector {
@@ -145,7 +146,9 @@ macro_rules! tower_button {
                 let price = $tower::price();
                 if price <= state.money {
                     state.money -= price;
-                    state.towers.push($tower::spawn(position));
+                    state
+                        .towers
+                        .push($tower::spawn(position, state.tower_placement_direction));
                     // TODO: rebuild web
                     state.path.recalculate_weights(|a, b| {
                         (a - b).length()
@@ -230,8 +233,6 @@ impl MainState {
             main_menu,
             state: GameState::new(),
             score_list: load_from_file("./save-file.csv".into()).unwrap(),
-            t_point_a: None,
-            t_point_b: None,
         };
         Ok(s)
     }
@@ -394,12 +395,6 @@ impl event::EventHandler<ggez::GameError> for MainState {
                 x.borrow_mut()
                     .input_start(mouse_position(ctx), &mut self.state)
             });
-        }
-
-        if self.state.mode == GameMode::Play && button == event::MouseButton::Left {
-            self.t_point_a = Some(mouse_position(ctx));
-        } else if self.state.mode == GameMode::Play && button == event::MouseButton::Right {
-            self.t_point_b = Some(mouse_position(ctx));
         }
     }
 
