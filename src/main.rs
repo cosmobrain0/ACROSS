@@ -34,6 +34,7 @@ use vector::*;
 pub const SCREEN_WIDTH: usize = 1920;
 pub const SCREEN_HEIGHT: usize = 1080;
 pub const STARTING_LIVES: usize = 5;
+const TOWER_PLACEMENT_DIRECTION_CHANGE_SPEED: f32 = 5.0 * PI / 180.0;
 
 #[derive(Debug, Clone, Copy)]
 pub struct Alive;
@@ -146,6 +147,10 @@ macro_rules! tower_button {
                 let price = $tower::price();
                 if price <= state.money {
                     state.money -= price;
+                    println!(
+                        "Tower placement direction: {}deg",
+                        state.tower_placement_direction * 180.0 / PI
+                    );
                     state
                         .towers
                         .push($tower::spawn(position, state.tower_placement_direction));
@@ -435,6 +440,27 @@ impl event::EventHandler<ggez::GameError> for MainState {
                 x.borrow_mut()
                     .input_released(mouse_position(ctx), &mut self.state);
             });
+        }
+    }
+
+    fn key_down_event(
+        &mut self,
+        ctx: &mut Context,
+        keycode: event::KeyCode,
+        _keymods: event::KeyMods,
+        _repeat: bool,
+    ) {
+        println!("{:#?}", &keycode);
+        match keycode {
+            event::KeyCode::A => {
+                self.state.tower_placement_direction -= TOWER_PLACEMENT_DIRECTION_CHANGE_SPEED;
+            }
+            event::KeyCode::B => {
+                self.state.tower_placement_direction += TOWER_PLACEMENT_DIRECTION_CHANGE_SPEED;
+            }
+            _ => {
+                return;
+            }
         }
     }
 }
