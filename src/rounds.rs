@@ -58,13 +58,6 @@ impl<'a> Round<'a> {
             .replace(Enemy::update_all(self.enemies.replace(Vec::new())));
         let enemies_after_movement = self.enemies.borrow().len();
 
-        // does this do nothing?
-        // let (bullets, mut enemies) = Bullet::update_all(
-        //     self.bullets.replace(Vec::new()),
-        //     self.enemies.replace(Vec::new()),
-        //     vec2d![size.0, size.1],
-        // );
-
         for tower in towers.iter_mut() {
             self.enemies.replace(tower.update(
                 self.enemies.replace(vec![]),
