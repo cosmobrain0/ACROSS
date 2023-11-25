@@ -128,7 +128,7 @@ impl<'a> EnemyTrait<'a> for TestEnemy {
     }
 
     fn update(&mut self) -> bool {
-        self.progress += 0.0012;
+        self.progress += 0.0012; // TODO: make this be a constant velocity, bsaed on a speed property
         self.progress < 1.0
     }
 
