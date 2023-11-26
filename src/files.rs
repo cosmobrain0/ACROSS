@@ -20,21 +20,16 @@ pub fn save_to_file(path: PathBuf, save_data: SaveData) -> Result<(), Box<dyn Er
     let score = save_data.score;
 
     if !path.exists()
-        || std::fs::read_to_string(&path)
-            .expect("Failed to read file!")
+        || std::fs::read_to_string(&path)?
             .lines()
             .filter(|x| x.trim().len() != 0)
             .count()
             == 0
     {
-        fs::write(&path, format!("date,score\n{date},{score}"))
-            .expect("Failed to overwrite to file");
+        fs::write(&path, format!("date,score\n{date},{score}"))?;
     } else {
-        let mut file = std::fs::OpenOptions::new()
-            .append(true)
-            .open(&path)
-            .expect("Failed to open the file!");
-        write!(file, "\n{date},{score}").expect("Failed to append to file!");
+        let mut file = std::fs::OpenOptions::new().append(true).open(&path)?;
+        write!(file, "\n{date},{score}")?;
     }
 
     Ok(())

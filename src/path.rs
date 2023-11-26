@@ -69,26 +69,23 @@ impl Route {
         }
     }
 
-    pub fn get_position(&self, progress: f32) -> Option<Vector> {
-        if !(0.0..1.0).contains(&progress) {
-            None
-        } else {
-            let mut progress_made = 0.0;
-            for (a, b, dist) in self
-                .points
-                .iter()
-                .skip(1)
-                .enumerate()
-                .map(|(i, &x)| (self.points[i], x, (x - self.points[i]).length()))
-                .map(|(a, b, dist)| (a, b, dist / self.length))
-            {
-                if progress_made + dist >= progress {
-                    return Some(a + (b - a) * (progress - progress_made) / dist);
-                }
-                progress_made += dist;
+    pub fn get_position(&self, progress: f32) -> Vector {
+        let progress = progress.clamp(0.0, 1.0);
+        let mut progress_made = 0.0;
+        for (a, b, dist) in self
+            .points
+            .iter()
+            .skip(1)
+            .enumerate()
+            .map(|(i, &x)| (self.points[i], x, (x - self.points[i]).length()))
+            .map(|(a, b, dist)| (a, b, dist / self.length))
+        {
+            if progress_made + dist >= progress {
+                return a + (b - a) * (progress - progress_made) / dist;
             }
-            Some(self.points[self.points.len() - 1])
+            progress_made += dist;
         }
+        self.points[self.points.len() - 1]
     }
 }
 

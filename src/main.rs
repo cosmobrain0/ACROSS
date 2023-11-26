@@ -164,7 +164,6 @@ macro_rules! tower_button {
                                 .sum::<f32>()
                                 * 5.0
                     });
-                    // TODO: extract these into constants
                     state.path.pathfind();
                 }
             },
@@ -237,10 +236,24 @@ impl MainState {
             menu,
             main_menu,
             state: GameState::new(),
-            score_list: load_from_file("./save-file.csv".into()).unwrap(),
+            score_list: multi_try(move |_| load_from_file("./save-file.csv".into()), (), 3)
+                .unwrap_or_else(|| vec![]),
         };
         Ok(s)
     }
+}
+
+pub fn multi_try<I: Clone, O, E>(
+    callback: impl Fn(I) -> Result<O, E>,
+    input: I,
+    tries: usize,
+) -> Option<O> {
+    for _ in 0..tries {
+        if let Ok(value) = callback(input.clone()) {
+            return Some(value);
+        }
+    }
+    None
 }
 
 impl event::EventHandler<ggez::GameError> for MainState {
@@ -258,9 +271,12 @@ impl event::EventHandler<ggez::GameError> for MainState {
                 self.state.money += enemies_killed * 2;
 
                 if self.state.lives == 0 {
-                    // TODO: some error handling?
                     let save_data = SaveData::new(chrono::Utc::now(), self.state.score);
-                    save_to_file("./save-file.csv".into(), save_data).unwrap();
+                    multi_try(
+                        |_| save_to_file("./save-file.csv".into(), save_data.clone()),
+                        (),
+                        3,
+                    );
                     self.score_list.push(save_data);
                     self.state = GameState::new();
                     return Ok(());

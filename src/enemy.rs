@@ -91,11 +91,11 @@ pub trait EnemyTrait<'a>: std::fmt::Debug {
     fn route(&self) -> &Route;
     /// Get the position of the enemy
     fn position(&self) -> Vector {
-        self.route().get_position(self.progress()).unwrap()
+        self.route().get_position(self.progress())
     }
     /// Get the velocity of theenemy
     fn velocity(&self) -> Vector {
-        self.route().get_position(self.progress() + 0.0012).unwrap() - self.position()
+        self.route().get_position(self.progress() + 0.0012) - self.position()
     }
     /// Check if this collides with another circle
     fn collides(&self, position: Vector, radius: f32) -> bool {
