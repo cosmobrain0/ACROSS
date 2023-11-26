@@ -144,27 +144,27 @@ macro_rules! tower_button {
             |_start, position, _movement, state| state.hover_position = Some(position),
             |_start, position, state| {
                 state.hover_position = None;
-                let price = $tower::price();
-                if price <= state.money {
-                    state.money -= price;
-                    println!(
-                        "Tower placement direction: {}deg",
-                        state.tower_placement_direction * 180.0 / PI
-                    );
-                    state
-                        .towers
-                        .push($tower::spawn(position, state.tower_placement_direction));
-                    state.tower_placement_direction = 0.0;
-                    state.path.recalculate_weights(|a, b| {
-                        (a - b).length()
-                            + state
-                                .towers
-                                .iter()
-                                .map(|tower| tower.visible_area(a, b))
-                                .sum::<f32>()
-                                * 5.0
-                    });
-                    state.path.pathfind();
+                if (130.0..=SCREEN_WIDTH as f32 - 10.0).contains(&position.x)
+                    && (10.0..SCREEN_HEIGHT as f32 - 10.0).contains(&position.y)
+                {
+                    let price = $tower::price();
+                    if price <= state.money {
+                        state.money -= price;
+                        state
+                            .towers
+                            .push($tower::spawn(position, state.tower_placement_direction));
+                        state.tower_placement_direction = 0.0;
+                        state.path.recalculate_weights(|a, b| {
+                            (a - b).length()
+                                + state
+                                    .towers
+                                    .iter()
+                                    .map(|tower| tower.visible_area(a, b))
+                                    .sum::<f32>()
+                                    * 5.0
+                        });
+                        state.path.pathfind();
+                    }
                 }
             },
             $name,
@@ -197,27 +197,16 @@ impl MainState {
             1.0,
             None,
         )));
-        let buttons = vec![
-            Button::new(
-                vec2d![-100.0, -100.0],
-                vec2d![200.0, 100.0],
-                Rc::clone(&main_menu),
-                |state: &mut GameState| {
-                    state.mode = GameMode::Play;
-                    // FIXME: This needs to restart the game or something maybe?
-                },
-                "Play",
-            ),
-            Button::new(
-                vec2d![-100.0, 50.0],
-                vec2d![200.0, 100.0],
-                Rc::clone(&main_menu),
-                |state| {
-                    println!("Something!");
-                },
-                "Something",
-            ),
-        ];
+        let buttons = vec![Button::new(
+            vec2d![-100.0, -50.0],
+            vec2d![200.0, 100.0],
+            Rc::clone(&main_menu),
+            |state: &mut GameState| {
+                state.mode = GameMode::Play;
+                // FIXME: This needs to restart the game or something maybe?
+            },
+            "Play",
+        )];
         main_menu
             .borrow_mut()
             .add_elements(buttons.into_iter().map(Into::into).collect());
@@ -473,7 +462,6 @@ impl event::EventHandler<ggez::GameError> for MainState {
         _keymods: event::KeyMods,
         _repeat: bool,
     ) {
-        println!("{:#?}", &keycode);
         match keycode {
             event::KeyCode::A => {
                 self.state.tower_placement_direction -= TOWER_PLACEMENT_DIRECTION_CHANGE_SPEED;
