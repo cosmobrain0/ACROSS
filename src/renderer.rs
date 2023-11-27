@@ -31,6 +31,9 @@ pub fn draw_circle(ctx: &mut Context, position: Vector, radius: f32, colour: Col
     graphics::draw(ctx, &mesh, (position, colour)).unwrap();
 }
 
+/// Draws an approximation of a sector
+/// given the number of triangles to use
+/// 100 is normally a good number of triangles
 pub fn draw_sector(
     ctx: &mut Context,
     position: Vector,
@@ -82,27 +85,10 @@ pub fn draw_text(
     graphics::draw(ctx, &text, DrawParam::from((position, colour))).unwrap();
 }
 
+/// Draws a line between two points, given a thickness
 pub fn draw_line(ctx: &mut Context, a: Vector, b: Vector, thickness: f32, colour: Color) {
     let mesh = MeshBuilder::new()
         .line(&[[a.x, a.y], [b.x, b.y], [a.x, a.y]], thickness, colour)
-        .unwrap()
-        .build(ctx)
-        .unwrap();
-    graphics::draw(ctx, &mesh, DrawParam::from(([0.0, 0.0], Color::WHITE))).unwrap();
-}
-
-#[allow(dead_code)]
-pub fn draw_joined_lines(ctx: &mut Context, points: Vec<Vector>, thickness: f32, colour: Color) {
-    let mesh = MeshBuilder::new()
-        .line(
-            points
-                .iter()
-                .map(|p| [p.x, p.y])
-                .collect::<Vec<_>>()
-                .as_slice(),
-            thickness,
-            colour,
-        )
         .unwrap()
         .build(ctx)
         .unwrap();

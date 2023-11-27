@@ -8,6 +8,7 @@ use crate::{
     Alive, Dead, Updated,
 };
 
+/// Represents something which a tower can shoot
 pub trait BulletTrait<'a>: std::fmt::Debug {
     /// create a new bullet
     fn spawn(
@@ -17,25 +18,42 @@ pub trait BulletTrait<'a>: std::fmt::Debug {
     ) -> Box<dyn BulletTrait<'a> + 'a>
     where
         Self: Sized;
+
+    /// Returns a reference to the tower which shot this bullet
     fn tower(&self) -> &'a dyn Tower;
+
+    /// Updates this bullet
     fn update<'b>(
         &mut self,
         enemies: Vec<Enemy<'b, Alive>>,
         bounds: Vector,
     ) -> (bool, Vec<Enemy<'b, Alive>>);
+
+    /// Renders this bullet
     fn draw(&self, ctx: &mut Context);
 }
 
-/// A lot of this is copied from enemy.js. Is there a way to reduce repetition?
+/// Represents a bullet which must be
+/// in the state `State` (either `Alive` or `Dead`)
+/// this is proven at compile-time
 #[derive(Debug)]
 pub struct Bullet<'a, State> {
     bullet: Box<dyn BulletTrait<'a> + 'a>,
     state: std::marker::PhantomData<State>,
 }
 
+/// Represents the result of updating a bullet:
+/// either a living bullet `Bullet<'a, Alive>`
+/// or a dead bullet `Bullet<'a, Dead>`
 type UpdatedBullet<'a> = Updated<Bullet<'a, Alive>, Bullet<'a, Dead>>;
 
+/// These methods only exist for bullets
+/// which are alive,
+/// as dead bullets can't be constructed
+/// or used for anything.
 impl<'a> Bullet<'a, Alive> {
+    /// Constructs a new bullet. New bullets are
+    /// guaranteed to be alive
     pub fn new(bullet: Box<dyn BulletTrait<'a> + 'a>) -> Bullet<'a, Alive> {
         Bullet {
             bullet,
@@ -43,6 +61,8 @@ impl<'a> Bullet<'a, Alive> {
         }
     }
 
+    /// Update the bullet. Dead bullets should not be
+    /// updated.
     pub fn update<'b>(
         mut self,
         enemies: Vec<Enemy<'b, Alive>>,
@@ -62,6 +82,7 @@ impl<'a> Bullet<'a, Alive> {
         }
     }
 
+    /// Update a list of living bullets, consuming the list
     pub fn update_all<'b>(
         mut bullets: Vec<Bullet<'a, Alive>>,
         enemies: Vec<Enemy<'b, Alive>>,
@@ -79,11 +100,13 @@ impl<'a> Bullet<'a, Alive> {
         (new_bullets, new_enemies)
     }
 
+    /// Draw a bullet
     pub fn draw(&self, ctx: &mut Context) {
         self.bullet.draw(ctx);
     }
 }
 
+/// a slow-moving, circular `BulletTrait`
 #[derive(Debug, Clone)]
 pub struct Projectile {
     position: Vector,
@@ -92,6 +115,7 @@ pub struct Projectile {
 }
 
 impl<'a> BulletTrait<'a> for Projectile {
+    /// Construct a new projectile
     fn spawn(
         tower: &impl Tower<'a>,
         target: Vector,
@@ -112,6 +136,7 @@ impl<'a> BulletTrait<'a> for Projectile {
         todo!()
     }
 
+    /// Update the bullet
     fn update<'b>(
         &mut self,
         mut enemies: Vec<Enemy<'b, Alive>>,
@@ -142,6 +167,7 @@ impl<'a> BulletTrait<'a> for Projectile {
         }
     }
 
+    /// Draw the bullet as a circle
     fn draw(&self, ctx: &mut Context) {
         draw_circle(
             ctx,

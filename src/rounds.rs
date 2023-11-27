@@ -8,6 +8,7 @@ use std::cell::RefCell;
 
 use crate::{bullet::Bullet, enemy::Enemy, tower::Tower, vec2d, Alive};
 
+/// Represents one round of the game
 pub struct Round<'a> {
     enemies_left: usize,
     round_number: usize,
@@ -16,6 +17,7 @@ pub struct Round<'a> {
 }
 
 impl<'a> Round<'a> {
+    /// Constructs a round, configuring everything based on the round number
     pub fn new(round_number: usize) -> Self {
         Self {
             enemies_left: 10,
@@ -25,15 +27,21 @@ impl<'a> Round<'a> {
         }
     }
 
+    /// Increases the round number, updating all required
+    /// variables
     pub fn next(&mut self) {
         *self = Round::new(self.round_number + 1);
     }
 
     /// maybe just make this take &self?
+    /// Calculates the time between enemy spawns based on the
+    /// round number
     pub fn time_between_enemies(round_number: usize) -> usize {
         120 / (round_number + 1)
     }
 
+    /// Updates enemies, bullets and towers
+    /// spawning enemies based on the round number
     pub fn update(
         &mut self,
         path: &Web,
@@ -71,10 +79,12 @@ impl<'a> Round<'a> {
         (lives_lost, enemies_killed)
     }
 
+    /// Gets the living enemies in this round
     pub fn enemies<'b>(&'b self) -> core::cell::Ref<'b, Vec<Enemy<'a, Alive>>> {
         self.enemies.borrow()
     }
 
+    /// Checks if this round is over
     pub fn complete(&self) -> bool {
         self.enemies_left == 0 && self.enemies.borrow().len() == 0
     }

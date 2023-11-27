@@ -1,3 +1,8 @@
+// Naming Conventions
+// snake_case: modules, functions, variables, macros
+// SCREAMING_SNAKE_CASE: constants
+// PascalCase: structs, types, traits
+
 mod bullet;
 mod collisions;
 mod enemy;
@@ -31,28 +36,55 @@ use tower::{SectorTower, TestTower, Tower};
 use ui::{Button, DragButton, Menu};
 use vector::*;
 
+/// The width of the canvas which will be drawn to, in pixels
 pub const SCREEN_WIDTH: usize = 1920;
+/// The height of the canvas which will be drawn to, in pixels
 pub const SCREEN_HEIGHT: usize = 1080;
+/// The number of lives that the player will start the game with
 pub const STARTING_LIVES: usize = 5;
+/// The ammount (radians) by which the direction of a tower will change
+/// when the user rotates the tower they are placing
 const TOWER_PLACEMENT_DIRECTION_CHANGE_SPEED: f32 = 5.0 * PI / 180.0;
 
+/// Used as a marker for the compiler
+/// to show that something is still "usable"
+/// e.g. an enemy is alive, or a bullet
+/// is still moving
 #[derive(Debug, Clone, Copy)]
 pub struct Alive;
+/// Used as a marker for the compiler
+/// to show that something is unusable
+/// and should be destroyed. e.g. an
+/// enemy has been killed, or a bullet
+/// has hit its target
 #[derive(Debug, Clone, Copy)]
 pub struct Dead;
 
+/// Used to wrap the result updating something
+/// which can be `Dead` or `Alive`
+/// This allows for signatures like
+/// `fn update(self) -> Updated<Self<Alive>, Self<Dead>>`
+/// so that when something is updated, the old value
+/// can no longer be used, and the state of the new
+/// value (alive or dead) must be considered
 #[derive(Debug)]
 pub enum Updated<AliveType, DeadType> {
     Alive(AliveType),
     Dead(DeadType),
 }
 
+/// Used to represent which "screen" the user
+/// is currently interacting with
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum GameMode {
+    /// The main menu
     MainMenu,
+    /// The main game
     Play,
 }
 
+/// Used to store information about the current state
+/// of the game
 pub struct GameState<'a> {
     path: Web,
     towers: Vec<Box<dyn Tower<'a> + 'a>>,
@@ -67,6 +99,10 @@ pub struct GameState<'a> {
 }
 
 impl<'a> GameState<'a> {
+    /// Inititialises the game
+    /// at round 0, with no towers placed
+    /// and a score of 0, and the correct
+    /// number of lives, and 30 money
     pub fn new() -> Self {
         let path = Web::new(
             vec![
@@ -117,14 +153,24 @@ impl<'a> Default for GameState<'a> {
     }
 }
 
+/// Stores the data for the whole application
+/// including the `GameState`
 pub struct MainState {
+    /// The canvas to draw to
     canvas: graphics::Canvas,
+    /// the in-game menu for `GameMode::Play`
     menu: Rc<RefCell<Menu<'static, GameState<'static>>>>,
+    /// the main menu for `GameMode::Menu`
     main_menu: Rc<RefCell<Menu<'static, GameState<'static>>>>,
+    /// the state of the game
     state: GameState<'static>,
+    /// data for all played games
     score_list: Vec<SaveData>,
 }
 
+/// Returns the coordinates of the mouse in screen-space
+/// so (0, 0) is the top-left of the screen and
+/// (SCREEN_WIDTH, SCREEN_HEIGHT) is the bottom-right
 pub fn mouse_position(ctx: &mut Context) -> Vector {
     let mouse_position = mouse::position(ctx);
     let window_size = graphics::drawable_size(ctx);
@@ -134,6 +180,8 @@ pub fn mouse_position(ctx: &mut Context) -> Vector {
     ]
 }
 
+/// Constructs a `DragButton` which can be used
+/// by the player to place a tower.
 macro_rules! tower_button {
     ($position:expr, $tower:ident $name:literal $menu:ident) => {
         DragButton::new(
@@ -173,6 +221,7 @@ macro_rules! tower_button {
 }
 
 impl MainState {
+    /// Initialises the game and window
     fn new(ctx: &mut Context) -> GameResult<MainState> {
         let menu: Rc<RefCell<Menu<GameState>>> =
             Rc::new(RefCell::new(Menu::new(vec2d!(0.0, 0.0), 1.0, None)));
@@ -232,6 +281,11 @@ impl MainState {
     }
 }
 
+/// Attempts to call `callback` multiple times
+/// until it returns `Result::Ok(O)`,
+/// or the maximum number of attempts (`tries`)
+/// has been reached.
+/// Returns the first `Ok` value, if there was one.
 pub fn multi_try<I: Clone, O, E>(
     callback: impl Fn(I) -> Result<O, E>,
     input: I,
@@ -246,6 +300,8 @@ pub fn multi_try<I: Clone, O, E>(
 }
 
 impl event::EventHandler<ggez::GameError> for MainState {
+    /// Updates the bullets, enemies and towers
+    /// moving them one step forward in time
     fn update(&mut self, _ctx: &mut Context) -> GameResult {
         let size = graphics::drawable_size(_ctx);
         match self.state.mode {
@@ -279,6 +335,9 @@ impl event::EventHandler<ggez::GameError> for MainState {
         }
     }
 
+    /// Draws the main menu, or the current state of the game
+    /// depending on the current `GameMode`
+    /// to the canvas, then draws the canvas to the screen
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
         graphics::set_canvas(ctx, Some(&self.canvas));
         graphics::set_screen_coordinates(
@@ -391,6 +450,7 @@ impl event::EventHandler<ggez::GameError> for MainState {
         Ok(())
     }
 
+    /// Handles clicking on buttons on the menu
     fn mouse_button_down_event(
         &mut self,
         ctx: &mut Context,
@@ -415,6 +475,7 @@ impl event::EventHandler<ggez::GameError> for MainState {
         }
     }
 
+    /// Handles dragging from menu buttons
     fn mouse_motion_event(&mut self, ctx: &mut Context, _x: f32, _y: f32, dx: f32, dy: f32) {
         match self.state.mode {
             GameMode::MainMenu => {
@@ -431,6 +492,7 @@ impl event::EventHandler<ggez::GameError> for MainState {
         });
     }
 
+    /// Handles releasing menu buttons
     fn mouse_button_up_event(
         &mut self,
         ctx: &mut Context,
@@ -455,6 +517,7 @@ impl event::EventHandler<ggez::GameError> for MainState {
         }
     }
 
+    /// Handles rotating the tower
     fn key_down_event(
         &mut self,
         ctx: &mut Context,
@@ -476,46 +539,11 @@ impl event::EventHandler<ggez::GameError> for MainState {
     }
 }
 
+/// Initialises and starts the game
 pub fn main() -> GameResult {
     let cb = ggez::ContextBuilder::new("ACROSS", "Cosmo Brain");
     let (mut ctx, event_loop) = cb.build()?;
 
     let state = MainState::new(&mut ctx)?;
     event::run(ctx, event_loop, state)
-}
-
-pub mod test {
-    macro_rules! assert_pretty_much_equal {
-        ($a:expr, $b:expr) => {
-            assert!(
-                ($a - $b).abs() <= 0.0001,
-                "{a} and {b} aren't pretty much equal",
-                a = $a,
-                b = $b
-            );
-        };
-    }
-
-    use std::f32::consts::PI;
-
-    use crate::tower::shortest_angle_distance;
-
-    #[test]
-    fn shortest_angle_distance_test_from_0() {
-        assert_pretty_much_equal!(shortest_angle_distance(0.0, PI / 2.0), PI / 2.0);
-        assert_pretty_much_equal!(shortest_angle_distance(0.0, -PI / 2.0), -PI / 2.0);
-        assert_pretty_much_equal!(shortest_angle_distance(0.0, PI / 2.0 * 3.0), -PI / 2.0);
-    }
-
-    #[test]
-    fn shortest_angle_distance_test_from_0_reverse() {
-        assert_pretty_much_equal!(shortest_angle_distance(PI / 2.0, 0.0), -PI / 2.0);
-        assert_pretty_much_equal!(shortest_angle_distance(-PI / 2.0, 0.0), PI / 2.0);
-        assert_pretty_much_equal!(shortest_angle_distance(PI / 2.0 * 3.0, 0.0), PI / 2.0);
-    }
-
-    #[test]
-    fn shortest_angle_distance_test_2() {
-        // assert_pretty_much_equal!(shortest_angle_distance())
-    }
 }

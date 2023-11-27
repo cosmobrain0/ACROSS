@@ -9,12 +9,16 @@ use crate::{
     vector::Vector,
 };
 
+/// Represents an error when creating a `Route`
+/// due to connections between points which
+/// don't exist
 #[derive(Debug)]
 pub struct RouteCreationError {
     invalid_connections: Vec<usize>,
     point_count: usize,
 }
 
+/// Represents an error when creating a `Web`
 #[derive(Debug)]
 pub enum WebCreationError {
     /// Invalid connections were supplied, or there is no route from the start
@@ -24,6 +28,7 @@ pub enum WebCreationError {
     InvalidEndpoints,
 }
 
+/// Represents a path which an `Enemy` should follow
 #[derive(Debug, Clone)]
 pub struct Route {
     points: Vec<Vector>,
@@ -31,6 +36,8 @@ pub struct Route {
 }
 
 impl Route {
+    /// Constructs a new route, or returns an error message
+    /// if the point list is invalid
     fn new(points: &Vec<Rc<RefCell<Point>>>) -> Result<Self, RouteCreationError> {
         let mut invalid_connections = vec![];
         for (i, point) in points.iter().enumerate().skip(1) {
@@ -58,6 +65,8 @@ impl Route {
     }
 
     /// Panics if there are less than 2 points
+    /// Constructs a new route, ignoring whether or not
+    /// the route is actually valid
     pub fn from_positions_unchecked(positions: Vec<Vector>) -> Self {
         Self {
             length: positions
@@ -69,6 +78,8 @@ impl Route {
         }
     }
 
+    /// Gets the position of an enemy on this route
+    /// based on a normalised `progress` value [0-1]
     pub fn get_position(&self, progress: f32) -> Vector {
         let progress = progress.clamp(0.0, 1.0);
         let mut progress_made = 0.0;
@@ -89,20 +100,10 @@ impl Route {
     }
 }
 
-/// This is a stupid idea
-/// but I think the easiest way of doing this
-/// is to construct a new web every time a weight changes
-/// what could go wrong?
-/// Well, an enemy which relies on this is gonna need a reference
-/// so ig I need a Box or something?
-/// I'll try a refcell
-/// Oh wait it's fine
-/// Because routes are independent of the web anyway
-/// Because that was a great idea too, wasn't it?
-/// OK I'm gonna make a new web anyway
-/// because a web is defined as having a pathfinder,
-/// And pathfinders are constructed from constant routes
-/// So most of the work would have to be redone anyway.
+/// Represents a web of points which
+/// enemies move along, with a start point
+/// for enemies to spawn at, and an end point
+/// for enemies to reach
 #[derive(Debug)]
 pub struct Web {
     points: Vec<Rc<RefCell<Point>>>,
@@ -111,6 +112,10 @@ pub struct Web {
     end: NodeIndex,
 }
 impl Web {
+    /// Validates the input (checking if it represents
+    /// a real web with no invalid connections etc)
+    /// and returns a Web if the input is valid
+    /// or an error if the input is invalid
     pub fn new(
         positions: Vec<Vector>,
         connections: Vec<(usize, usize)>,
@@ -150,10 +155,14 @@ impl Web {
         }
     }
 
+    /// Uses the A* algorithm to calculate the best
+    /// route from `start` to `end`
     pub fn pathfind(&mut self) {
         self.pathfinder.pathfind(self.start, self.end);
     }
 
+    /// Draws the web to the screen, highlighting the current
+    /// best route
     pub fn draw(&self, ctx: &mut Context) {
         self.points.iter().for_each(|x| {
             x.borrow().connections.iter().for_each(|y| {
@@ -176,31 +185,46 @@ impl Web {
             .for_each(|x| draw_circle(ctx, x.borrow().position, 20.0, Color::WHITE));
     }
 
+    /// Gets the best route, assuming that it has
+    /// already been calculated
+    /// # Panics
+    /// Panics if the best route has not been calculated
     pub fn route(&self) -> Vec<Vector> {
         self.pathfinder.best_route().unwrap()
     }
 
+    /// Recalculates the weights of connections between nodes
+    /// on this web, given a function to specify how the weights
+    /// are calculated
     pub fn recalculate_weights(&mut self, weight_calculation: impl Fn(Vector, Vector) -> f32) {
         self.pathfinder.recalculate_weights(weight_calculation);
     }
 }
 
+/// A node which enemies can move to/from on a web
 #[derive(Debug, Clone)]
 struct Point {
+    /// The screen-space position of the node
     position: Vector,
+    /// References to the nodes which it is connected to
     connections: Vec<Rc<RefCell<Point>>>,
 }
 impl Point {
+    /// Constructs a new node
     pub fn new(position: Vector) -> Self {
         Self {
             position,
             connections: vec![],
         }
     }
+
+    /// Gets the position of this node
     pub fn position(&self) -> &Vector {
         &self.position
     }
 
+    /// Connects this node to the other given nodes
+    /// This is a one-way connection
     pub fn add_connections(&mut self, connections: &Vec<Rc<RefCell<Point>>>) {
         self.connections.reserve(connections.len());
         for p in connections.iter() {
@@ -210,6 +234,7 @@ impl Point {
         }
     }
 
+    /// Checks if a given node is a neighbour of this node
     pub fn is_neighbour(&self, point: &Rc<RefCell<Point>>) -> bool {
         self.connections
             .iter()

@@ -11,6 +11,7 @@ use crate::{
     vector::Vector,
 };
 
+/// Represents a part of the UI
 pub enum UIElement<'a, T> {
     Button(Button<'a, T>),
     Menu(Menu<'a, T>),
@@ -18,6 +19,7 @@ pub enum UIElement<'a, T> {
 }
 
 impl<T> UIElement<'_, T> {
+    /// Gets the position of the element
     pub fn position(&self) -> Vector {
         match self {
             UIElement::Button(x) => vec2d!(x.x(), x.y()),
@@ -26,6 +28,7 @@ impl<T> UIElement<'_, T> {
         }
     }
 
+    /// Gets the width and height of the element
     pub fn size(&self) -> Vector {
         match self {
             UIElement::Button(x) => vec2d!(x.width(), x.height()),
@@ -34,6 +37,8 @@ impl<T> UIElement<'_, T> {
         }
     }
 
+    /// Gets the size of an element, ignoring any scaling
+    /// by the parent element(s)
     pub fn local_size(&self) -> Vector {
         match self {
             UIElement::Button(x) => x.size,
@@ -42,6 +47,8 @@ impl<T> UIElement<'_, T> {
         }
     }
 
+    /// Gets the position of an element, ignoring any translation
+    /// by the parent element(s)
     pub fn local_position(&self) -> Vector {
         match self {
             UIElement::Button(x) => x.position,
@@ -50,6 +57,7 @@ impl<T> UIElement<'_, T> {
         }
     }
 
+    /// Draws the element to the canvas
     pub fn draw(&self, ctx: &mut Context) {
         match self {
             UIElement::Button(x) => x.draw(ctx),
@@ -58,6 +66,8 @@ impl<T> UIElement<'_, T> {
         }
     }
 
+    /// Tells this element that the mouse was pressed at a given
+    /// position
     pub fn input_start(&mut self, position: Vector, state: &mut T) {
         match self {
             UIElement::Menu(x) => x.input_start(position, state),
@@ -66,6 +76,8 @@ impl<T> UIElement<'_, T> {
         }
     }
 
+    /// Tells this element that the mouse was moved, while held down,
+    /// by `movement` to `position`
     pub fn input_moved(&mut self, position: Vector, movement: Vector, state: &mut T) {
         match self {
             UIElement::Menu(x) => x.input_moved(position, movement, state),
@@ -74,6 +86,7 @@ impl<T> UIElement<'_, T> {
         }
     }
 
+    /// Tells this element that the mouse was released at `position`
     pub fn input_released(&mut self, position: Vector, state: &mut T) {
         match self {
             UIElement::Button(x) => x.input_released(position, state),
@@ -83,6 +96,7 @@ impl<T> UIElement<'_, T> {
     }
 }
 
+/// Represents a button with text, which can be clicked
 pub struct Button<'a, T> {
     parent: Rc<RefCell<Menu<'a, T>>>,
     position: Vector,
@@ -92,15 +106,19 @@ pub struct Button<'a, T> {
 }
 
 impl<'a, T> Button<'a, T> {
+    /// Gets the global x coordinate of this button
     pub fn x(&self) -> f32 {
         self.position.x * self.parent.borrow().scale() + self.parent.borrow().position().x
     }
+    /// Gets the global y coordinate of this button
     pub fn y(&self) -> f32 {
         self.position.y * self.parent.borrow().scale() + self.parent.borrow().position().y
     }
+    /// Gets the global width of this button
     pub fn width(&self) -> f32 {
         self.size.x * self.parent.borrow().scale()
     }
+    /// Gets the global height of this button
     pub fn height(&self) -> f32 {
         self.size.y * self.parent.borrow().scale()
     }
@@ -124,6 +142,9 @@ impl<'a, T> Button<'a, T> {
         }
     }
 
+    /// Checks if the mouse hovers over this button,
+    /// given the local position of the mouse (relative to
+    /// the `parent` menu)
     pub fn local_hovers(&self, mouse: Vector) -> bool {
         self.position.x <= mouse.x
             && self.position.y <= mouse.y
@@ -131,11 +152,13 @@ impl<'a, T> Button<'a, T> {
             && self.position.y + self.size.y >= mouse.y
     }
 
+    /// Responds to this button being clicked
     pub fn click(&self, state: &mut T) {
         let callback = self.callback;
         callback(state);
     }
 
+    /// Draws this button
     pub fn draw(&self, ctx: &mut Context) {
         draw_rectangle(
             ctx,
@@ -154,6 +177,8 @@ impl<'a, T> Button<'a, T> {
         );
     }
 
+    /// Responds to the mouse being released,
+    /// by `Button::click`ing if the mouse is over the button
     pub fn input_released(&self, position: Vector, state: &mut T) {
         if self.local_hovers(position) {
             self.click(state);
@@ -167,6 +192,8 @@ impl<'a, T> From<Button<'a, T>> for UIElement<'a, T> {
     }
 }
 
+/// Represents a collection of UI elements
+/// which have a common translation/scaling applied to them
 pub struct Menu<'a, T> {
     position: Vector,
     scale: f32,
@@ -184,10 +211,12 @@ impl<'a, T> Menu<'a, T> {
         }
     }
 
+    /// Adds elements to this collection
     pub fn add_elements(&mut self, elements: Vec<UIElement<'a, T>>) {
         self.elements.extend(elements.into_iter());
     }
 
+    /// Gets the global position of menu
     pub fn position(&self) -> Vector {
         match self.parent {
             Some(parent) => self.position * parent.scale + parent.position(),
@@ -195,6 +224,7 @@ impl<'a, T> Menu<'a, T> {
         }
     }
 
+    /// Gets the global scale of this menu
     pub fn scale(&self) -> f32 {
         match self.parent {
             Some(parent) => self.scale * parent.scale(),
@@ -202,7 +232,7 @@ impl<'a, T> Menu<'a, T> {
         }
     }
 
-    /// Returns (top_left, bottom_right)
+    /// Returns the global (top_left, bottom_right)
     pub fn bounds(&self) -> (Vector, Vector) {
         let initial: Vector = self.elements[0].position();
         let initial: (Vector, Vector) = (initial, initial);
@@ -213,6 +243,7 @@ impl<'a, T> Menu<'a, T> {
         })
     }
 
+    /// Returns the local (top_left, buttom_right)
     pub fn local_bounds(&self) -> (Vector, Vector) {
         let initial: Vector = self.elements[0].local_position();
         let initial: (Vector, Vector) = (initial, initial);
@@ -223,24 +254,29 @@ impl<'a, T> Menu<'a, T> {
         })
     }
 
+    /// Gets the global width and height of this menu
     pub fn size(&self) -> Vector {
         let bounds = self.bounds();
         bounds.1 - bounds.0
     }
 
+    /// Gets the local width and height of this menu
     pub fn local_size(&self) -> Vector {
         let bounds = self.local_bounds();
         bounds.1 - bounds.0
     }
 
+    /// Draws this menu
     pub fn draw(&self, ctx: &mut Context) {
         self.elements.iter().for_each(|x| x.draw(ctx));
     }
 
+    /// Gets the local position of this menu
     pub fn local_position(&self) -> Vector {
         self.local_bounds().0
     }
 
+    /// Like `Button::local_hovers`
     pub fn local_hovers(&self, position: Vector) -> bool {
         (position.x >= self.local_position().x)
             && (position.y >= self.local_position().y)
@@ -248,6 +284,8 @@ impl<'a, T> Menu<'a, T> {
             && (position.y <= self.local_position().y + self.local_size().y)
     }
 
+    /// Tells all elements in this collection
+    /// that the mouse has been released
     pub fn input_released(&mut self, position: Vector, state: &mut T) {
         let local_position = self.position;
         for element in self.elements.iter_mut() {
@@ -255,6 +293,8 @@ impl<'a, T> Menu<'a, T> {
         }
     }
 
+    /// Tells all elements in this collection
+    /// that the mouse has been moved, while held down
     pub fn input_moved(&mut self, position: Vector, movement: Vector, state: &mut T) {
         let local_position = self.position;
         for element in self.elements.iter_mut() {
@@ -266,6 +306,8 @@ impl<'a, T> Menu<'a, T> {
         }
     }
 
+    /// Tells all elements in this collection
+    /// that the mouse has been held down
     pub fn input_start(&mut self, position: Vector, state: &mut T) {
         if self.local_hovers(position) {
             let local_position = self.position;
@@ -293,6 +335,7 @@ impl<T> Default for Menu<'_, T> {
     }
 }
 
+/// A button from which things can be dragged
 pub struct DragButton<'a, T> {
     parent: Rc<RefCell<Menu<'a, T>>>,
     button: Button<'a, T>,
@@ -327,6 +370,7 @@ impl<'a, T> DragButton<'a, T> {
         }
     }
 
+    /// Gets the inner button which this is based off of
     pub fn button<'b>(&'b self) -> &'b Button<'a, T>
     where
         'a: 'b,
@@ -334,6 +378,7 @@ impl<'a, T> DragButton<'a, T> {
         &self.button
     }
 
+    /// Like `Button::input_start`
     pub fn input_start(&mut self, position: Vector, state: &mut T) {
         if self.button.local_hovers(position) {
             self.drag_start = Some(position);
@@ -342,6 +387,7 @@ impl<'a, T> DragButton<'a, T> {
         }
     }
 
+    /// Like `Button::input_released`
     pub fn input_released(&mut self, position: Vector, state: &mut T) {
         if let Some(start) = self.drag_start {
             let callback = self.released_callback;
@@ -350,6 +396,7 @@ impl<'a, T> DragButton<'a, T> {
         }
     }
 
+    /// Like `Button::input_moved`
     pub fn input_moved(&mut self, position: Vector, movement: Vector, state: &mut T) {
         if let Some(start) = self.drag_start {
             let callback = self.moved_callback;

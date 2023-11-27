@@ -2,6 +2,7 @@ use crate::tower::shortest_angle_distance;
 use crate::vec2d;
 use crate::Vector;
 
+/// Represents the intersection between a line and a circle
 /// a line fully enclosed by a circle is represented with `LineCircleCollision::None`
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum LineCircleCollision {
@@ -10,6 +11,8 @@ pub enum LineCircleCollision {
     Two(Vector, Vector),
 }
 impl LineCircleCollision {
+    /// Takes a list of intersection points and constructs a `LineCircleCollision` instance
+    /// if there aren't too many intersection points
     pub fn from_vec(v: Vec<Vector>) -> Option<LineCircleCollision> {
         match v.len() {
             0 => Some(LineCircleCollision::None),
@@ -34,6 +37,7 @@ impl IntoIterator for LineCircleCollision {
     }
 }
 
+/// Returns the point where a point intersects with a circle
 pub fn point_circle_collision(centre: Vector, radius: f32, p: Vector) -> Option<Vector> {
     if (p - centre).sqr_length() <= radius * radius {
         Some(p)
@@ -42,6 +46,7 @@ pub fn point_circle_collision(centre: Vector, radius: f32, p: Vector) -> Option<
     }
 }
 
+/// Returns the intersection points between a circle and a line segment
 pub fn line_circle_collision(
     centre: Vector,
     radius: f32,
@@ -90,6 +95,7 @@ pub fn line_circle_collision(
     LineCircleCollision::from_vec(collisions).unwrap()
 }
 
+/// Represents the roots of a quadratic equation
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum QuadraticSolution {
     NoRoots,
@@ -113,6 +119,7 @@ impl IntoIterator for QuadraticSolution {
 }
 
 /// This probably breaks horribly if a line has a length of 0
+/// Finds the intersection point between two line segments, if there is one
 pub fn line_line_collision(a1: Vector, b1: Vector, a2: Vector, b2: Vector) -> Option<Vector> {
     // finding the vector equation of the lines
     // so I don't have to deal with vertical lines having undefined gradients
@@ -154,6 +161,7 @@ fn simultaneous_equations(a: f32, b: f32, c: f32, d: f32, e: f32, f: f32) -> (f3
     return (x, y);
 }
 
+/// Returns the point of intersection between a point and a sector
 pub fn point_sector_collision(
     centre: Vector,
     radius: f32,
@@ -173,6 +181,7 @@ pub fn point_sector_collision(
 }
 
 /// This function never returns more than two collisions
+/// Returns the intersection points between a line and a sector
 pub fn line_sector_collision(
     centre: Vector,
     radius: f32,
@@ -207,6 +216,7 @@ pub fn line_sector_collision(
     }
 }
 
+/// Solves the quadratic equation: ax^2 + bx + c = 0
 fn quadratic(a: f32, b: f32, c: f32) -> QuadraticSolution {
     let discriminant = b * b - 4.0 * a * c;
     if discriminant > 0.0 {

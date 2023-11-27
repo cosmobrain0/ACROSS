@@ -4,6 +4,8 @@ use std::{error::Error, io::Write, path::PathBuf, sync::Arc};
 
 use chrono::{DateTime, Utc};
 
+/// Represents the data saved for one game
+/// in a save file
 #[derive(Debug, Clone, Copy)]
 pub struct SaveData {
     pub date: DateTime<Utc>,
@@ -15,6 +17,8 @@ impl SaveData {
     }
 }
 
+/// Saves the given data to the end of the given save file,
+/// or returns an error message if this fails
 pub fn save_to_file(path: PathBuf, save_data: SaveData) -> Result<(), Box<dyn Error>> {
     let date = save_data.date.to_rfc3339();
     let score = save_data.score;
@@ -35,6 +39,9 @@ pub fn save_to_file(path: PathBuf, save_data: SaveData) -> Result<(), Box<dyn Er
     Ok(())
 }
 
+/// Returns the data saved in the given file,
+/// validating each line and ignoring invalid ones
+/// or returns an error message if this fails
 pub fn load_from_file(path: PathBuf) -> Result<Vec<SaveData>, Box<dyn Error>> {
     Ok(std::fs::read_to_string(&path)?
         .lines()

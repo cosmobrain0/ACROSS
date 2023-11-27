@@ -1,5 +1,9 @@
 use crate::vector::Vector;
 
+/// Represents an index for a node
+/// Prevents unsigned integers which were
+/// intended for other purposes to be used
+/// as node indexes by accident
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct NodeIndex(pub usize);
 impl From<usize> for NodeIndex {
@@ -8,6 +12,8 @@ impl From<usize> for NodeIndex {
     }
 }
 
+/// Represents a connection between two nodes
+/// with a calculated weight
 #[derive(Debug, Clone, PartialEq)]
 pub struct Connection {
     start: NodeIndex,
@@ -23,6 +29,8 @@ impl From<(usize, usize, f32)> for Connection {
         }
     }
 }
+/// Represents a node for the A* algorithm
+/// with a position, g_cost, h_cost, f_cost and parent
 #[derive(Debug, Clone, PartialEq)]
 pub struct Node {
     position: Vector,
@@ -43,6 +51,10 @@ impl Node {
         }
     }
 
+    /// Gets the h_cost of this node,
+    /// assuming that it has already been calculated
+    /// # Panics
+    /// Panics if the h_cost has not been calculated
     fn h_cost(&self) -> f32 {
         if let Some(h_cost) = self.h_cost {
             h_cost
@@ -51,6 +63,9 @@ impl Node {
         }
     }
 
+    /// Sets the g_cost of this node, based on
+    /// the fact that the shortest route to it
+    /// is from a given parent node.
     /// # Panics
     /// Panics if the parent node does not have a g_cost
     fn set_g_cost(
@@ -69,11 +84,13 @@ impl Node {
         self.g_cost = Some(parent.g_cost.unwrap() + weight);
     }
 
+    /// Gets the position of this node
     pub fn position(&self) -> Vector {
         self.position
     }
 }
 impl Node {
+    /// Constructs a node
     pub fn new(position: Vector) -> Self {
         Self {
             position,
@@ -83,18 +100,23 @@ impl Node {
         }
     }
 
+    /// Calculates the h_cost and f_cost, if the g_cost has been calculated
     #[inline(always)]
     pub fn f_cost_calculate(&mut self, target: &Node) -> Option<f32> {
         self.g_cost
             .map(|g_cost| g_cost + self.h_cost_calculate(target))
     }
 
+    /// Gets the f_cost, if the g_cost has been calculated
+    /// # Panics
+    /// Panics if the h_cost has not been calculated
     #[inline(always)]
     pub fn f_cost(&self) -> Option<f32> {
         self.g_cost.map(|g_cost| g_cost + self.h_cost())
     }
 }
 
+/// Represents all of the data required for the A* algorithm
 #[derive(Debug, Clone)]
 pub struct Pathfinder {
     nodes: Vec<Node>,
@@ -102,7 +124,8 @@ pub struct Pathfinder {
     best_route: Option<Vec<Node>>,
 }
 impl Pathfinder {
-    /// This is *horrible* code
+    /// Constructs a new pathfinder,
+    /// if the given inputs are valid
     pub fn new(
         nodes: &Vec<Vector>,
         connections: &Vec<(usize, usize)>,
@@ -138,6 +161,8 @@ impl Pathfinder {
         }
     }
 
+    /// Recalculates the weights of connections between nodes
+    /// given a function to calculate those weights
     pub fn recalculate_weights(&mut self, weight_calculation: impl Fn(Vector, Vector) -> f32) {
         for connection in &mut self.connections {
             connection.weight = weight_calculation(
@@ -148,6 +173,7 @@ impl Pathfinder {
         self.best_route = None;
     }
 
+    /// Calculates the best route between given `start` and `end` nodes
     pub fn pathfind(&mut self, start: NodeIndex, end: NodeIndex) -> &Vec<Node> {
         // everything added to `open` must have a calculated g_cost
         let mut open = vec![];
@@ -217,6 +243,7 @@ impl Pathfinder {
         }
     }
 
+    /// Gets the neighbours of a node specified by a `NodeIndex`
     fn neighbours<'a>(&'a mut self, node_index: NodeIndex) -> Vec<NodeIndex> {
         self.connections
             .iter()
@@ -225,6 +252,7 @@ impl Pathfinder {
             .collect()
     }
 
+    /// Gets the best route, if it has been calculated
     pub fn best_route(&self) -> Option<Vec<Vector>> {
         self.best_route
             .as_ref()

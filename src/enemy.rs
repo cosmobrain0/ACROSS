@@ -2,18 +2,22 @@ use ggez::{graphics::Color, Context};
 
 use crate::{path::Route, renderer::draw_circle, vector::Vector, Alive, Dead, Updated};
 
+/// Represents an enemy with a fixed state `State`
+/// either `Alive` or `Dead`
 #[derive(Debug)]
 pub struct Enemy<'a, State> {
     enemy: Box<dyn EnemyTrait<'a> + 'a>,
     state: std::marker::PhantomData<State>,
 }
 
+/// These methods only exist for living enemies
 impl<'a> Enemy<'a, Alive> {
     /// This is mainly for debugging
     pub fn new_random(route: Route) -> Enemy<'a, Alive> {
         TestEnemy::spawn(route)
     }
 
+    /// Constructs a new enemy. New enemies are always alive
     pub fn new(enemy: Box<dyn EnemyTrait<'a> + 'a>) -> Enemy<'a, Alive> {
         Enemy {
             enemy,
@@ -21,6 +25,7 @@ impl<'a> Enemy<'a, Alive> {
         }
     }
 
+    /// Updates a list of enemies, consuming the list
     pub fn update_all(mut enemies: Vec<Enemy<'a, Alive>>) -> Vec<Enemy<'a, Alive>> {
         let mut new_enemies = Vec::with_capacity(enemies.len());
         while let Some(enemy) = enemies.pop() {
@@ -33,7 +38,9 @@ impl<'a> Enemy<'a, Alive> {
     }
 }
 
+/// These methods only exist for living enemies
 impl<'a> Enemy<'a, Alive> {
+    /// Updates an enemy
     pub fn update(mut self) -> Updated<Enemy<'a, Alive>, Enemy<'a, Dead>> {
         let alive = self.enemy.update();
         if alive {
@@ -46,18 +53,22 @@ impl<'a> Enemy<'a, Alive> {
         }
     }
 
+    /// Draws an enemy
     pub fn draw(&self, ctx: &mut Context) {
         self.enemy.draw(ctx);
     }
 
+    /// Checks if an enemy collides with a circle
     pub fn collides(&self, position: Vector, radius: f32) -> bool {
         self.enemy.collides(position, radius)
     }
 
+    /// Returns the position of the enemy
     pub fn position(&self) -> Vector {
         self.enemy.position()
     }
 
+    /// Returns the velocity of the enemy (pixels/frame)
     pub fn velocity(&self) -> Vector {
         self.enemy.velocity()
     }
@@ -104,6 +115,8 @@ pub trait EnemyTrait<'a>: std::fmt::Debug {
     }
 }
 
+/// A simple enemy which shoots projectiles
+/// and has a circular range
 #[derive(Debug)]
 pub struct TestEnemy {
     path: Route,
@@ -111,6 +124,7 @@ pub struct TestEnemy {
     health: f32,
 }
 
+/// See docs for `EnemyTrait`
 impl<'a> EnemyTrait<'a> for TestEnemy {
     fn draw(&self, ctx: &mut Context) {
         draw_circle(ctx, self.position(), self.radius(), Color::RED);

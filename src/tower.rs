@@ -15,23 +15,33 @@ use crate::{
     Alive,
 };
 
+/// Represents any kind of tower
 pub trait Tower<'t> {
+    /// This is how much this tower costs (money)
     fn price() -> usize
     where
         Self: Sized;
+    /// How long this tower has until it shoots (frames)
     fn time_until_shot(&self) -> f32;
+    /// Update the tower and its bullets
     fn update<'a>(
         &mut self,
         enemies: Vec<Enemy<'a, Alive>>,
         bounds: Vector,
     ) -> Vec<Enemy<'a, Alive>>;
+    /// Draw the tower to the screen
     fn draw(&self, ctx: &mut Context);
+    /// Get the position of the tower
     fn position(&self) -> Vector;
+    /// Get the radius of the tower
     fn radius(&self) -> f32;
+    /// Get the `Range` of the tower
     fn range(&self) -> &dyn Range;
+    /// Spawn a new tower at a given position, facing a given direction
     fn spawn(position: Vector, direction: f32) -> Box<dyn Tower<'t> + 't>
     where
         Self: Sized;
+    /// Get the living bullets of this tower
     fn bullets(&self) -> &RefCell<Vec<Bullet<'t, Alive>>>;
     /// Returns the length of the line segment from a to b
     /// which can be seen by this tower
@@ -42,17 +52,21 @@ pub trait Tower<'t> {
 
 /// The view of a tower
 pub trait Range {
+    /// Draw the range to the screen
     fn draw(&self, ctx: &mut Context);
+    /// Choose an enemy which this range can see, to shoot at
     fn get_target<'a, 'b>(&self, enemies: &'b [Enemy<'a, Alive>]) -> Option<&'b Enemy<'a, Alive>>
     where
         'a: 'b;
-    /// Returns the length of line which this range can see
+    /// Returns the length of line segment which this range can see
     fn line_intersection(&self, a: Vector, b: Vector) -> f32;
 }
+/// Represents a circular range
 pub struct CircularRange {
     position: Vector,
     radius: f32,
 }
+/// See docs for `Range`
 impl Range for CircularRange {
     fn draw(&self, ctx: &mut Context) {
         draw_circle(
@@ -81,6 +95,7 @@ impl Range for CircularRange {
     }
 }
 
+/// Represents a range in the shape of a sector
 pub struct SectorRange {
     position: Vector,
     radius: f32,
@@ -89,6 +104,7 @@ pub struct SectorRange {
     /// The field of view (an angle) of this range
     fov: f32,
 }
+/// See docs for `Range`
 impl Range for SectorRange {
     fn draw(&self, ctx: &mut Context) {
         draw_sector(
@@ -120,9 +136,6 @@ impl Range for SectorRange {
         None
     }
 
-    /// FIXME: what if the line goes through the edges of the sector?
-    /// then the lines and the arc both return intersection points
-    /// and there are more than 2
     fn line_intersection(&self, a: Vector, b: Vector) -> f32 {
         let collisions =
             line_sector_collision(self.position, self.radius, self.direction, self.fov, a, b);
@@ -149,15 +162,7 @@ pub fn shortest_angle_distance(theta1: f32, theta2: f32) -> f32 {
     }) * (theta2 - theta1).signum()
 }
 
-// pub fn spawn_tower<'a>(position: Vector, money: usize) -> Option<(Box<dyn Tower<'a> + 'a>, usize)> {
-//     let price = SectorTower::price() as usize;
-//     if price <= money {
-//         Some((SectorTower::spawn(position, ), price))
-//     } else {
-//         None
-//     }
-// }
-
+/// Represents a simple tower with a circular range
 pub struct TestTower<'t> {
     time_to_next_shot: usize,
     position: Vector,
@@ -165,6 +170,7 @@ pub struct TestTower<'t> {
     range: CircularRange,
 }
 impl<'t> TestTower<'t> {
+    /// The time between shots for this tower (frames)
     #[inline(always)]
     fn cooldown() -> usize {
         60
@@ -182,6 +188,7 @@ impl<'t> TestTower<'t> {
         }
     }
 }
+/// See docs for `Tower`
 impl<'t> Tower<'t> for TestTower<'t> {
     #[inline(always)]
     fn price() -> usize
@@ -257,6 +264,7 @@ impl<'t> Tower<'t> for TestTower<'t> {
     }
 }
 
+/// A simple tower with a range in the shape of a sector
 pub struct SectorTower<'t> {
     time_to_next_shot: usize,
     position: Vector,
@@ -264,6 +272,7 @@ pub struct SectorTower<'t> {
     range: SectorRange,
 }
 impl<'t> SectorTower<'t> {
+    /// The time between shots for this tower
     #[inline(always)]
     pub fn cooldown() -> usize {
         20
@@ -283,6 +292,7 @@ impl<'t> SectorTower<'t> {
         }
     }
 }
+/// See docs for `Tower`
 impl<'t> Tower<'t> for SectorTower<'t> {
     fn price() -> usize
     where
@@ -356,6 +366,11 @@ impl<'t> Tower<'t> for SectorTower<'t> {
     }
 }
 
+/// Returns the velocity with which a projectile should be shot
+/// to hit a target which is currently at `target_position`
+/// and has a constant velocity of `target_velocity`
+/// if the projectile will be shot from `start`
+/// with a speed of `projectile_speed`
 pub fn aim_towards(
     start: Vector,
     target_position: Vector,
