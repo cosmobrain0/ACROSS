@@ -129,7 +129,7 @@ impl Range for SectorRange {
             self.direction - self.fov / 2.0,
             self.direction + self.fov / 2.0,
             200,
-            Color::from_rgba(255, 255, 255, 100),
+            Color::from_rgba(255, 255, 255, 20),
         );
     }
 
@@ -427,7 +427,7 @@ pub fn aim_towards(
     // sin(alpha)/kd_E = sin(theta)/d_E
     let k = projectile_speed / target_velocity.length();
     let alpha = PI - (target_position - start).angle_between(target_velocity);
-    let sin_theta = (alpha.sin() / k).asin();
+    let sin_theta = alpha.sin() / k;
 
     // o^2 = x^2(1 + k^2 - 2kcos(theta))
     // o^2 / x^2 > 0, 1 + k^2 - 2kcos(theta) > 0
@@ -439,7 +439,17 @@ pub fn aim_towards(
 
     cos_theta
         .map(|cos_theta| vec2d![cos_theta, sin_theta] * projectile_speed)
-        .map(|velocity| velocity.rotate(-velocity.angle() * 2.0)) // why????
+        .map(|velocity| {
+            if (target_position - start)
+                .clockwise_90deg()
+                .dot(target_velocity)
+                > 0.0
+            {
+                velocity.rotate(-velocity.angle() * 2.0)
+            } else {
+                velocity
+            }
+        })
         .map(|velocity| velocity.rotate((target_position - start).angle()))
         .next()
         .expect("Some valid solutions")

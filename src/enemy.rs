@@ -146,8 +146,8 @@ impl<'a> EnemyTrait<'a> for TestEnemy {
     fn draw(&self, ctx: &mut Context) {
         draw_progress_bar(
             ctx,
-            self.position() - vec2d![self.radius(), self.radius() + 5.0 + 20.0],
-            vec2d![self.radius() * 2.0, 10.0],
+            self.position() - vec2d![self.radius(), self.radius() + 5.0 + 10.0],
+            vec2d![self.radius() * 3.0, 10.0],
             self.health,
             Color::from_rgb(180, 180, 180),
             Color::from_rgb(0, 200, 230),
