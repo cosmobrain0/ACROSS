@@ -401,13 +401,6 @@ impl event::EventHandler<ggez::GameError> for MainState {
                 }
                 if let Some(position) = self.state.hover_position {
                     draw_circle(ctx, position, 10.0, Color::WHITE);
-                    draw_line(
-                        ctx,
-                        position,
-                        position + Vector::from_polar(self.state.tower_placement_direction, 80.0),
-                        3.0,
-                        Color::RED,
-                    );
                     if let Some(range) = self.state.tower_placement_range.as_mut() {
                         range.draw(ctx);
                     }
