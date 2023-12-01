@@ -48,6 +48,10 @@ pub trait Tower<'t> {
     fn visible_area(&self, a: Vector, b: Vector) -> f32 {
         self.range().line_intersection(a, b)
     }
+    /// Returns a new range which can be used for stuff
+    fn new_range(position: Vector, direction: f32) -> Box<dyn Range>
+    where
+        Self: Sized;
 }
 
 /// The view of a tower
@@ -60,6 +64,8 @@ pub trait Range {
         'a: 'b;
     /// Returns the length of line segment which this range can see
     fn line_intersection(&self, a: Vector, b: Vector) -> f32;
+    fn set_position(&mut self, position: Vector);
+    fn set_direction(&mut self, direction: f32);
 }
 /// Represents a circular range
 pub struct CircularRange {
@@ -93,6 +99,12 @@ impl Range for CircularRange {
             LineCircleCollision::Two(a, b) => (a - b).length(),
         }
     }
+
+    fn set_position(&mut self, position: Vector) {
+        self.position = position;
+    }
+
+    fn set_direction(&mut self, direction: f32) {}
 }
 
 /// Represents a range in the shape of a sector
@@ -145,6 +157,14 @@ impl Range for SectorRange {
             2 => (collisions[0] - collisions[1]).length(),
             _ => unreachable!("Line/Sector collision shouldn't return more than two points!"),
         }
+    }
+
+    fn set_position(&mut self, position: Vector) {
+        self.position = position;
+    }
+
+    fn set_direction(&mut self, direction: f32) {
+        self.direction = direction;
     }
 }
 
@@ -262,6 +282,16 @@ impl<'t> Tower<'t> for TestTower<'t> {
     fn bullets(&self) -> &RefCell<Vec<Bullet<'t, Alive>>> {
         &self.bullets
     }
+
+    fn new_range(position: Vector, _direction: f32) -> Box<dyn Range>
+    where
+        Self: Sized,
+    {
+        Box::new(CircularRange {
+            position,
+            radius: 150.0,
+        }) as Box<dyn Range>
+    }
 }
 
 /// A simple tower with a range in the shape of a sector
@@ -363,6 +393,18 @@ impl<'t> Tower<'t> for SectorTower<'t> {
 
     fn bullets(&self) -> &RefCell<Vec<Bullet<'t, Alive>>> {
         &self.bullets
+    }
+
+    fn new_range(position: Vector, direction: f32) -> Box<dyn Range>
+    where
+        Self: Sized,
+    {
+        Box::new(SectorRange {
+            position,
+            radius: 200.0,
+            direction,
+            fov: PI / 2.0,
+        }) as Box<dyn Range>
     }
 }
 

@@ -32,7 +32,7 @@ use ggez::{Context, GameResult};
 
 use path::{Route, Web};
 use renderer::{draw_circle, draw_line, draw_sector, draw_text};
-use tower::{SectorTower, TestTower, Tower};
+use tower::{Range, SectorTower, TestTower, Tower};
 use ui::{Button, DragButton, Menu};
 use vector::*;
 
@@ -96,6 +96,7 @@ pub struct GameState<'a> {
     money: usize,
     /// this is **not** good but it works
     tower_placement_direction: f32,
+    tower_placement_range: Option<Box<dyn Range>>,
 }
 
 impl<'a> GameState<'a> {
@@ -143,6 +144,7 @@ impl<'a> GameState<'a> {
             score: 0,
             money: 30,
             tower_placement_direction: 0.0,
+            tower_placement_range: None,
         }
     }
 }
@@ -188,8 +190,19 @@ macro_rules! tower_button {
             $position,
             vec2d![100.0, 75.0],
             Rc::clone(&$menu),
-            |start, state: &mut GameState| state.hover_position = Some(start),
-            |_start, position, _movement, state| state.hover_position = Some(position),
+            |start, state: &mut GameState| {
+                state.hover_position = Some(start);
+                state.tower_placement_range =
+                    Some($tower::new_range(start, state.tower_placement_direction));
+                // TODO: use the new tower trait thing
+            },
+            |_start, position, _movement, state| {
+                state.hover_position = Some(position);
+                state
+                    .tower_placement_range
+                    .as_mut()
+                    .map(|x| x.set_position(position));
+            },
             |_start, position, state| {
                 state.hover_position = None;
                 if (130.0..=SCREEN_WIDTH as f32 - 10.0).contains(&position.x)
@@ -202,6 +215,7 @@ macro_rules! tower_button {
                             .towers
                             .push($tower::spawn(position, state.tower_placement_direction));
                         state.tower_placement_direction = 0.0;
+                        state.tower_placement_range = None;
                         state.path.recalculate_weights(|a, b| {
                             (a - b).length()
                                 + state
@@ -394,6 +408,9 @@ impl event::EventHandler<ggez::GameError> for MainState {
                         3.0,
                         Color::RED,
                     );
+                    if let Some(range) = self.state.tower_placement_range.as_mut() {
+                        range.draw(ctx);
+                    }
                 }
                 self.menu.borrow().draw(ctx);
                 draw_text(
@@ -520,7 +537,7 @@ impl event::EventHandler<ggez::GameError> for MainState {
     /// Handles rotating the tower
     fn key_down_event(
         &mut self,
-        ctx: &mut Context,
+        _ctx: &mut Context,
         keycode: event::KeyCode,
         _keymods: event::KeyMods,
         _repeat: bool,
@@ -528,9 +545,17 @@ impl event::EventHandler<ggez::GameError> for MainState {
         match keycode {
             event::KeyCode::A => {
                 self.state.tower_placement_direction -= TOWER_PLACEMENT_DIRECTION_CHANGE_SPEED;
+                self.state
+                    .tower_placement_range
+                    .as_mut()
+                    .map(|x| x.set_direction(self.state.tower_placement_direction));
             }
             event::KeyCode::D => {
                 self.state.tower_placement_direction += TOWER_PLACEMENT_DIRECTION_CHANGE_SPEED;
+                self.state
+                    .tower_placement_range
+                    .as_mut()
+                    .map(|x| x.set_direction(self.state.tower_placement_direction));
             }
             _ => {
                 return;
