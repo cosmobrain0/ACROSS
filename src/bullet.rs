@@ -148,7 +148,9 @@ impl<'a> BulletTrait<'a> for Projectile {
         let mut alive = true;
         while let Some(enemy) = enemies.pop() {
             if enemy.collides(self.position, self.radius) {
-                // TODO: damage enemy instead of just killing it
+                if let Updated::Alive(enemy) = enemy.damage(0.2) {
+                    new_enemies.push(enemy);
+                }
                 alive = false;
             } else {
                 new_enemies.push(enemy);

@@ -72,6 +72,18 @@ impl<'a> Enemy<'a, Alive> {
     pub fn velocity(&self) -> Vector {
         self.enemy.velocity()
     }
+
+    pub fn damage(mut self, dmg: f32) -> Updated<Enemy<'a, Alive>, Enemy<'a, Dead>> {
+        let alive = self.enemy.damage(dmg);
+        if alive {
+            Updated::Alive(Enemy::new(self.enemy))
+        } else {
+            Updated::Dead(Enemy {
+                enemy: self.enemy,
+                state: std::marker::PhantomData,
+            })
+        }
+    }
 }
 
 pub trait EnemyTrait<'a>: std::fmt::Debug {
@@ -97,7 +109,7 @@ pub trait EnemyTrait<'a>: std::fmt::Debug {
     /// I can guarantee that I'll always use circles
     fn radius(&self) -> f32;
     /// Damage the enemy
-    fn damage(&mut self, dmg: f32);
+    fn damage(&mut self, dmg: f32) -> bool;
     /// Get the route this enemy is following
     fn route(&self) -> &Route;
     /// Get the position of the enemy
@@ -115,8 +127,7 @@ pub trait EnemyTrait<'a>: std::fmt::Debug {
     }
 }
 
-/// A simple enemy which shoots projectiles
-/// and has a circular range
+/// A simple enemy
 #[derive(Debug)]
 pub struct TestEnemy {
     path: Route,
@@ -158,8 +169,9 @@ impl<'a> EnemyTrait<'a> for TestEnemy {
         15.0
     }
 
-    fn damage(&mut self, dmg: f32) {
+    fn damage(&mut self, dmg: f32) -> bool {
         self.health = 0.0f32.max(self.health - dmg);
+        self.health > 0.0
     }
 
     fn route(&self) -> &Route {
