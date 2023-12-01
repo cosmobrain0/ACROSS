@@ -1,6 +1,12 @@
 use ggez::{graphics::Color, Context};
 
-use crate::{path::Route, renderer::draw_circle, vector::Vector, Alive, Dead, Updated};
+use crate::{
+    path::Route,
+    renderer::{draw_circle, draw_progress_bar},
+    vec2d,
+    vector::Vector,
+    Alive, Dead, Updated,
+};
 
 /// Represents an enemy with a fixed state `State`
 /// either `Alive` or `Dead`
@@ -138,6 +144,15 @@ pub struct TestEnemy {
 /// See docs for `EnemyTrait`
 impl<'a> EnemyTrait<'a> for TestEnemy {
     fn draw(&self, ctx: &mut Context) {
+        draw_progress_bar(
+            ctx,
+            self.position() - vec2d![self.radius(), self.radius() + 5.0 + 20.0],
+            vec2d![self.radius() * 2.0, 10.0],
+            self.health,
+            Color::from_rgb(180, 180, 180),
+            Color::from_rgb(0, 200, 230),
+            2.0,
+        );
         draw_circle(ctx, self.position(), self.radius(), Color::RED);
     }
 

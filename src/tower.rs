@@ -14,9 +14,10 @@ use crate::{
     vector::Vector,
     Alive,
 };
+use std::fmt::Debug;
 
 /// Represents any kind of tower
-pub trait Tower<'t> {
+pub trait Tower<'t>: Debug {
     /// This is how much this tower costs (money)
     fn price() -> usize
     where
@@ -55,7 +56,7 @@ pub trait Tower<'t> {
 }
 
 /// The view of a tower
-pub trait Range {
+pub trait Range: Debug {
     /// Draw the range to the screen
     fn draw(&self, ctx: &mut Context);
     /// Choose an enemy which this range can see, to shoot at
@@ -68,6 +69,7 @@ pub trait Range {
     fn set_direction(&mut self, direction: f32);
 }
 /// Represents a circular range
+#[derive(Debug)]
 pub struct CircularRange {
     position: Vector,
     radius: f32,
@@ -94,7 +96,7 @@ impl Range for CircularRange {
 
     fn line_intersection(&self, a: Vector, b: Vector) -> f32 {
         let collisions = line_circle_collision(self.position, self.radius, a, b);
-        match (collisions) {
+        match collisions {
             LineCircleCollision::None | LineCircleCollision::One(_) => 0.0,
             LineCircleCollision::Two(a, b) => (a - b).length(),
         }
@@ -108,6 +110,7 @@ impl Range for CircularRange {
 }
 
 /// Represents a range in the shape of a sector
+#[derive(Debug)]
 pub struct SectorRange {
     position: Vector,
     radius: f32,
@@ -183,6 +186,7 @@ pub fn shortest_angle_distance(theta1: f32, theta2: f32) -> f32 {
 }
 
 /// Represents a simple tower with a circular range
+#[derive(Debug)]
 pub struct TestTower<'t> {
     time_to_next_shot: usize,
     position: Vector,
@@ -295,6 +299,7 @@ impl<'t> Tower<'t> for TestTower<'t> {
 }
 
 /// A simple tower with a range in the shape of a sector
+#[derive(Debug)]
 pub struct SectorTower<'t> {
     time_to_next_shot: usize,
     position: Vector,

@@ -94,3 +94,26 @@ pub fn draw_line(ctx: &mut Context, a: Vector, b: Vector, thickness: f32, colour
         .unwrap();
     graphics::draw(ctx, &mesh, DrawParam::from(([0.0, 0.0], Color::WHITE))).unwrap();
 }
+
+/// Draws a progress bar
+pub fn draw_progress_bar(
+    ctx: &mut Context,
+    top_left: Vector,
+    size: Vector,
+    progress: f32,
+    back_colour: Color,
+    colour: Color,
+    padding: f32,
+) {
+    draw_rectangle(ctx, top_left, size, back_colour);
+    let total_inner_width = size.x - padding * 2.0;
+    let inner_height = size.y - padding * 2.0;
+    let inner_top_left = top_left + vec2d![padding, padding];
+    let inner_width = total_inner_width * progress.clamp(0.0, 1.0);
+    draw_rectangle(
+        ctx,
+        inner_top_left,
+        vec2d![inner_width, inner_height],
+        colour,
+    );
+}
