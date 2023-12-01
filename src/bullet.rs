@@ -147,7 +147,7 @@ impl<'a> BulletTrait<'a> for Projectile {
         let mut new_enemies = Vec::with_capacity(enemies.len());
         let mut alive = true;
         while let Some(enemy) = enemies.pop() {
-            if enemy.collides(self.position, self.radius) {
+            if alive || enemy.collides(self.position, self.radius) {
                 if let Updated::Alive(enemy) = enemy.damage(0.2) {
                     new_enemies.push(enemy);
                 }
