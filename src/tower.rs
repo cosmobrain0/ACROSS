@@ -242,7 +242,9 @@ impl<'t> Tower<'t> for TestTower<'t> {
         }
         let bullets = Vec::with_capacity(self.bullets.borrow().len());
         let bullets = self.bullets.replace(bullets);
+        dbg!(bullets.len());
         let (new_bullets, new_enemies) = Bullet::update_all(bullets, enemies, bounds);
+        dbg!(new_bullets.len());
         self.bullets.replace(new_bullets);
         new_enemies
     }
