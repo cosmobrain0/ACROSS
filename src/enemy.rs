@@ -159,7 +159,7 @@ impl<'a> EnemyTrait<'a> for TestEnemy {
     }
 
     fn spawn(path: Route, round_number: usize) -> Enemy<'a, Alive> {
-        let speed = 3.0 + round_number as f32 * 1.0;
+        let speed = 1.0 + round_number as f32 * 0.3;
         let length = path.length();
         Enemy {
             enemy: Box::new(Self {
