@@ -240,7 +240,7 @@ impl<'a> BulletTrait<'a> for Lightning {
             }
         }
 
-        (false, new_enemies)
+        (true, new_enemies)
     }
 
     /// Draw the bullet as a line
