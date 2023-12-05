@@ -204,3 +204,83 @@ impl<'a> EnemyTrait<'a> for TestEnemy {
             - self.path.get_position(self.progress)
     }
 }
+
+/// A harder-to-beat enemy
+#[derive(Debug, Clone)]
+pub struct FastEnemy {
+    path: Route,
+    progress: f32,
+    health: f32,
+    progress_increment: f32,
+}
+
+impl<'a> EnemyTrait<'a> for FastEnemy {
+    fn draw(&self, ctx: &mut Context) {
+        draw_progress_bar(
+            ctx,
+            self.position() - vec2d![self.radius(), self.radius() + 5.0 + 10.0],
+            vec2d![self.radius() * 3.0, 10.0],
+            self.health,
+            Color::from_rgb(180, 180, 180),
+            Color::from_rgb(0, 200, 230),
+            2.0,
+        );
+        draw_circle(
+            ctx,
+            self.position(),
+            self.radius(),
+            Color::from_rgb(166, 22, 199),
+        );
+    }
+
+    fn spawn(route: Route, round_number: usize) -> Enemy<'a, Alive>
+    where
+        Self: Sized,
+    {
+        let speed = 1.1 + round_number as f32 * 0.35;
+        let length = route.length();
+        Enemy {
+            enemy: Box::new(Self {
+                path: route,
+                progress: 0.0,
+                health: 1.0,
+                progress_increment: speed / length,
+            }) as Box<dyn EnemyTrait<'a> + 'a>,
+            state: std::marker::PhantomData::<Alive>,
+        }
+    }
+
+    fn update(&mut self) -> bool {
+        self.progress += self.progress_increment;
+        self.progress < 1.0
+    }
+
+    fn health(&self) -> f32 {
+        self.health
+    }
+
+    fn progress(&self) -> f32 {
+        self.progress
+    }
+
+    fn radius(&self) -> f32 {
+        25.0
+    }
+
+    fn damage(&mut self, dmg: f32) -> bool {
+        // the 1.3 here gives the enemy 1.3 times as much
+        // health as `TestEnemy`
+        self.health = 0.0f32.max(self.health - dmg / 1.3);
+        self.health > 0.0
+    }
+
+    fn route(&self) -> &Route {
+        &self.path
+    }
+
+    fn velocity(&self) -> Vector {
+        self.path
+            .get_position(self.progress + self.progress_increment)
+            - self.path.get_position(self.progress)
+    }
+}

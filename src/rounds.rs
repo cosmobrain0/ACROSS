@@ -1,5 +1,7 @@
+use rand::random;
+
 use crate::{
-    enemy::{EnemyTrait, TestEnemy},
+    enemy::{EnemyTrait, FastEnemy, TestEnemy},
     path::{Route, Web},
     vector::Vector,
     SCREEN_HEIGHT, SCREEN_WIDTH,
@@ -50,14 +52,7 @@ impl<'a> Round<'a> {
     ) -> (usize, usize) {
         self.time_to_next_shot = self.time_to_next_shot.saturating_sub(1);
         if self.time_to_next_shot == 0 {
-            if self.enemies_left > 0 {
-                self.enemies.borrow_mut().push(TestEnemy::spawn(
-                    Route::from_positions_unchecked(path.route()),
-                    self.round_number,
-                ));
-                self.enemies_left -= 1;
-            }
-            self.time_to_next_shot = Self::time_between_enemies(self.round_number);
+            self.spawn_enemy(path);
         }
 
         let initial_enemies = self.enemies.borrow().len();
@@ -86,5 +81,21 @@ impl<'a> Round<'a> {
     /// Checks if this round is over
     pub fn complete(&self) -> bool {
         self.enemies_left == 0 && self.enemies.borrow().len() == 0
+    }
+
+    fn spawn_enemy(&mut self, path: &Web) {
+        if self.enemies_left == 0 {
+            return;
+        }
+        let random_number: f32 = random();
+        let route = Route::from_positions_unchecked(path.route());
+        let round_number = self.round_number;
+        self.enemies.borrow_mut().push(if random_number < 0.7 {
+            TestEnemy::spawn(route, round_number)
+        } else {
+            FastEnemy::spawn(route, round_number)
+        });
+        self.enemies_left -= 1;
+        self.time_to_next_shot = Self::time_between_enemies(self.round_number);
     }
 }
