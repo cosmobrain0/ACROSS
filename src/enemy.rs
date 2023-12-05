@@ -1,6 +1,7 @@
 use ggez::{graphics::Color, Context};
 
 use crate::{
+    collisions::{line_circle_collision, LineCircleCollision},
     path::Route,
     renderer::{draw_circle, draw_progress_bar},
     vec2d,
@@ -89,6 +90,13 @@ impl<'a> Enemy<'a, Alive> {
                 state: std::marker::PhantomData,
             })
         }
+    }
+
+    /// Checks if this enemy intersects with
+    /// a line segment between points `a` and `b`
+    pub fn line_collision(&self, a: Vector, b: Vector) -> bool {
+        line_circle_collision(self.enemy.position(), self.enemy.radius(), a, b)
+            != LineCircleCollision::None
     }
 }
 

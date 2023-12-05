@@ -2,10 +2,10 @@ use ggez::{graphics::Color, Context};
 
 use crate::{
     enemy::Enemy,
-    renderer::draw_circle,
+    renderer::{draw_circle, draw_line},
     tower::{aim_towards, Tower},
     vector::Vector,
-    Alive, Dead, Updated,
+    Alive, Dead, Updated, SCREEN_HEIGHT, SCREEN_WIDTH,
 };
 
 /// Represents something which a tower can shoot
@@ -176,6 +176,91 @@ impl<'a> BulletTrait<'a> for Projectile {
             self.position,
             self.radius,
             Color::new(0.0, 1.0, 0.5, 1.0),
+        );
+    }
+}
+
+const LIGHTNING_LIFESPAN: usize = 3;
+
+/// a very fast moving, line-shaped `BulletTrait`
+#[derive(Debug, Clone)]
+pub struct Lightning {
+    start: Vector,
+    direction: Vector,
+    life: usize,
+}
+
+impl<'a> BulletTrait<'a> for Lightning {
+    /// Construct a new projectile
+    fn spawn(
+        tower: &impl Tower<'a>,
+        target: Vector,
+        _target_velocity: Vector,
+    ) -> Box<dyn BulletTrait<'a> + 'a>
+    where
+        Self: Sized,
+    {
+        Box::new(Self {
+            start: tower.position(),
+            direction: target - tower.position(),
+            life: LIGHTNING_LIFESPAN,
+        }) as Box<dyn BulletTrait<'a> + 'a>
+    }
+
+    fn tower(&self) -> &'a dyn Tower {
+        todo!()
+    }
+
+    /// Update the bullet
+    fn update<'b>(
+        &mut self,
+        mut enemies: Vec<Enemy<'b, Alive>>,
+        bounds: Vector,
+    ) -> (bool, Vec<Enemy<'b, Alive>>) {
+        if self.life == 0 {
+            return (false, enemies);
+        }
+        self.life -= 1;
+
+        let mut new_enemies = Vec::with_capacity(enemies.len());
+        while let Some(enemy) = enemies.pop() {
+            if enemy.line_collision(
+                self.start,
+                self.start
+                    + self.direction.normalised()
+                        * f32::sqrt(
+                            (SCREEN_WIDTH * SCREEN_WIDTH * SCREEN_HEIGHT * SCREEN_HEIGHT) as f32,
+                        ),
+            ) {
+                if let Updated::Alive(enemy) = enemy.damage(0.1) {
+                    new_enemies.push(enemy);
+                }
+            } else {
+                new_enemies.push(enemy);
+            }
+        }
+
+        (false, new_enemies)
+    }
+
+    /// Draw the bullet as a line
+    fn draw(&self, ctx: &mut Context) {
+        // draw_circle(
+        //     ctx,
+        //     self.start,
+        //     self.radius,
+        //     Color::new(0.0, 1.0, 0.5, 1.0),
+        // );
+        draw_line(
+            ctx,
+            self.start,
+            self.start
+                + self.direction.normalised()
+                    * f32::sqrt(
+                        (SCREEN_WIDTH * SCREEN_WIDTH + SCREEN_HEIGHT * SCREEN_HEIGHT) as f32,
+                    ),
+            4.0,
+            Color::from_rgb(0, 255, 150),
         );
     }
 }

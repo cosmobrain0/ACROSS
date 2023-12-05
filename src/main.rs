@@ -393,9 +393,6 @@ impl event::EventHandler<ggez::GameError> for MainState {
                 for enemy in self.state.round.enemies().iter() {
                     enemy.draw(ctx);
                 }
-                // for bullet in self.state.round.bullets().iter() {
-                //     bullet.draw(ctx);
-                // }
                 for tower in &self.state.towers {
                     tower.draw(ctx);
                 }
