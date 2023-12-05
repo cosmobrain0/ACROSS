@@ -222,18 +222,23 @@ impl<'a> BulletTrait<'a> for Lightning {
         self.life -= 1;
 
         let mut new_enemies = Vec::with_capacity(enemies.len());
+        let mut alive = self.life == 0;
         while let Some(enemy) = enemies.pop() {
-            if enemy.line_collision(
-                self.start,
-                self.start
-                    + self.direction.normalised()
-                        * f32::sqrt(
-                            (SCREEN_WIDTH * SCREEN_WIDTH * SCREEN_HEIGHT * SCREEN_HEIGHT) as f32,
-                        ),
-            ) {
+            if alive
+                && enemy.line_collision(
+                    self.start,
+                    self.start
+                        + self.direction.normalised()
+                            * f32::sqrt(
+                                (SCREEN_WIDTH * SCREEN_WIDTH * SCREEN_HEIGHT * SCREEN_HEIGHT)
+                                    as f32,
+                            ),
+                )
+            {
                 if let Updated::Alive(enemy) = enemy.damage(0.2) {
                     new_enemies.push(enemy);
                 }
+                alive = self.life == 0;
             } else {
                 new_enemies.push(enemy);
             }

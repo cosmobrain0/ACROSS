@@ -20,7 +20,7 @@ impl<'a> Round<'a> {
     /// Constructs a round, configuring everything based on the round number
     pub fn new(round_number: usize) -> Self {
         Self {
-            enemies_left: 10,
+            enemies_left: 7 * round_number + 10,
             round_number,
             time_to_next_shot: Self::time_between_enemies(round_number),
             enemies: RefCell::new(vec![]),
