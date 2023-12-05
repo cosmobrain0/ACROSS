@@ -180,7 +180,7 @@ impl<'a> BulletTrait<'a> for Projectile {
     }
 }
 
-const LIGHTNING_LIFESPAN: usize = 3;
+const LIGHTNING_LIFESPAN: usize = 20;
 
 /// a very fast moving, line-shaped `BulletTrait`
 #[derive(Debug, Clone)]
