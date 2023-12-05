@@ -126,7 +126,6 @@ impl<'a> BulletTrait<'a> for Projectile {
     {
         Box::new(Self {
             position: tower.position(),
-            // velocity: (target - tower.position()).normalised() * 3.0,
             velocity: aim_towards(tower.position(), target, target_velocity, 3.0),
             radius: 5.0,
         }) as Box<dyn BulletTrait<'a> + 'a>
@@ -148,7 +147,7 @@ impl<'a> BulletTrait<'a> for Projectile {
         let mut alive = true;
         while let Some(enemy) = enemies.pop() {
             if alive && enemy.collides(self.position, self.radius) {
-                if let Updated::Alive(enemy) = enemy.damage(0.2) {
+                if let Updated::Alive(enemy) = enemy.damage(0.4) {
                     new_enemies.push(enemy);
                 }
                 alive = false;
@@ -180,7 +179,7 @@ impl<'a> BulletTrait<'a> for Projectile {
     }
 }
 
-const LIGHTNING_LIFESPAN: usize = 20;
+const LIGHTNING_LIFESPAN: usize = 30;
 
 /// a very fast moving, line-shaped `BulletTrait`
 #[derive(Debug, Clone)]
@@ -232,7 +231,7 @@ impl<'a> BulletTrait<'a> for Lightning {
                             (SCREEN_WIDTH * SCREEN_WIDTH * SCREEN_HEIGHT * SCREEN_HEIGHT) as f32,
                         ),
             ) {
-                if let Updated::Alive(enemy) = enemy.damage(0.1) {
+                if let Updated::Alive(enemy) = enemy.damage(0.2) {
                     new_enemies.push(enemy);
                 }
             } else {

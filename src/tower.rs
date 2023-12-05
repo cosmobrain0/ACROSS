@@ -81,7 +81,7 @@ impl Range for CircularRange {
             ctx,
             self.position,
             self.radius,
-            Color::from_rgba(255, 255, 255, 100),
+            Color::from_rgba(255, 255, 255, 20),
         );
     }
 
@@ -219,7 +219,7 @@ impl<'t> Tower<'t> for TestTower<'t> {
     where
         Self: Sized,
     {
-        5
+        25
     }
 
     fn update<'b>(
