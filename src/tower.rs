@@ -430,10 +430,10 @@ pub fn aim_towards(
     // o^2 = x^2(1 + k^2 - 2kcos(theta))
     // o^2 / x^2 > 0, 1 + k^2 - 2kcos(theta) > 0
     // (1+k^2)/2k > cos(theta)
+    dbg!(sin_theta);
     let cos_theta = 1.0 - sin_theta * sin_theta;
-    let cos_theta = [cos_theta.sqrt(), -cos_theta.sqrt()]
-        .into_iter()
-        .filter(|&cos_theta| cos_theta < (1.0 + k * k) / (2.0 * k));
+    let cos_theta = [cos_theta.sqrt(), -cos_theta.sqrt()].into_iter();
+    // .filter(|&cos_theta| cos_theta < (1.0 + k * k) / (2.0 * k));
 
     cos_theta
         .map(|cos_theta| vec2d![cos_theta, sin_theta] * projectile_speed)

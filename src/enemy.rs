@@ -19,11 +19,6 @@ pub struct Enemy<'a, State> {
 
 /// These methods only exist for living enemies
 impl<'a> Enemy<'a, Alive> {
-    /// This is mainly for debugging
-    pub fn new_random(route: Route) -> Enemy<'a, Alive> {
-        TestEnemy::spawn(route)
-    }
-
     /// Constructs a new enemy. New enemies are always alive
     pub fn new(enemy: Box<dyn EnemyTrait<'a> + 'a>) -> Enemy<'a, Alive> {
         Enemy {
@@ -104,7 +99,7 @@ pub trait EnemyTrait<'a>: std::fmt::Debug {
     /// Draw the enemy to the screen
     fn draw(&self, ctx: &mut Context);
     /// Spawn an enemy on a path
-    fn spawn(route: Route) -> Enemy<'a, Alive>
+    fn spawn(route: Route, round_number: usize) -> Enemy<'a, Alive>
     where
         Self: Sized;
     /// Update the enemy (move it one frame forward)
@@ -131,9 +126,7 @@ pub trait EnemyTrait<'a>: std::fmt::Debug {
         self.route().get_position(self.progress())
     }
     /// Get the velocity of theenemy
-    fn velocity(&self) -> Vector {
-        self.route().get_position(self.progress() + 0.0012) - self.position()
-    }
+    fn velocity(&self) -> Vector;
     /// Check if this collides with another circle
     fn collides(&self, position: Vector, radius: f32) -> bool {
         (self.position() - position).sqr_length()
@@ -147,6 +140,7 @@ pub struct TestEnemy {
     path: Route,
     progress: f32,
     health: f32,
+    progress_increment: f32,
 }
 
 /// See docs for `EnemyTrait`
@@ -164,19 +158,22 @@ impl<'a> EnemyTrait<'a> for TestEnemy {
         draw_circle(ctx, self.position(), self.radius(), Color::RED);
     }
 
-    fn spawn(path: Route) -> Enemy<'a, Alive> {
+    fn spawn(path: Route, round_number: usize) -> Enemy<'a, Alive> {
+        let speed = 3.0 + round_number as f32 * 1.0;
+        let length = path.length();
         Enemy {
             enemy: Box::new(Self {
                 path,
                 progress: 0.0,
                 health: 1.0,
+                progress_increment: speed / length,
             }) as Box<dyn EnemyTrait<'a> + 'a>,
             state: std::marker::PhantomData::<Alive>,
         }
     }
 
     fn update(&mut self) -> bool {
-        self.progress += 0.0012; // TODO: make this be a constant velocity, bsaed on a speed property
+        self.progress += self.progress_increment;
         self.progress < 1.0
     }
 
@@ -199,5 +196,11 @@ impl<'a> EnemyTrait<'a> for TestEnemy {
 
     fn route(&self) -> &Route {
         &self.path
+    }
+
+    fn velocity(&self) -> Vector {
+        self.path
+            .get_position(self.progress + self.progress_increment)
+            - self.path.get_position(self.progress)
     }
 }

@@ -98,6 +98,11 @@ impl Route {
         }
         self.points[self.points.len() - 1]
     }
+
+    // Get the length of this route, in pixels
+    pub fn length(&self) -> f32 {
+        self.length
+    }
 }
 
 /// Represents a web of points which

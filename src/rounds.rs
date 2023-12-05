@@ -51,11 +51,10 @@ impl<'a> Round<'a> {
         self.time_to_next_shot = self.time_to_next_shot.saturating_sub(1);
         if self.time_to_next_shot == 0 {
             if self.enemies_left > 0 {
-                self.enemies
-                    .borrow_mut()
-                    .push(TestEnemy::spawn(Route::from_positions_unchecked(
-                        path.route(),
-                    )));
+                self.enemies.borrow_mut().push(TestEnemy::spawn(
+                    Route::from_positions_unchecked(path.route()),
+                    self.round_number,
+                ));
                 self.enemies_left -= 1;
             }
             self.time_to_next_shot = Self::time_between_enemies(self.round_number);
