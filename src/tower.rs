@@ -3,7 +3,7 @@ use std::{cell::RefCell, f32::consts::PI};
 use ggez::{graphics::Color, Context};
 
 use crate::{
-    bullet::{Bullet, BulletTrait, Projectile},
+    bullet::{Bullet, BulletTrait, Lightning, Projectile},
     collisions::{
         line_circle_collision, line_sector_collision, point_circle_collision,
         point_sector_collision, LineCircleCollision,
@@ -219,7 +219,7 @@ impl<'t> Tower<'t> for TestTower<'t> {
     where
         Self: Sized,
     {
-        40
+        5
     }
 
     fn update<'b>(
@@ -230,13 +230,11 @@ impl<'t> Tower<'t> for TestTower<'t> {
         if self.time_to_next_shot == 0 {
             // shoot!
             if let Some(enemy) = self.range.get_target(&enemies) {
-                self.bullets
-                    .borrow_mut()
-                    .push(Bullet::new(Projectile::spawn(
-                        self,
-                        enemy.position(),
-                        enemy.velocity(),
-                    )));
+                self.bullets.borrow_mut().push(Bullet::new(Lightning::spawn(
+                    self,
+                    enemy.position(),
+                    enemy.velocity(),
+                )));
                 self.time_to_next_shot = TestTower::cooldown();
             }
         } else {
